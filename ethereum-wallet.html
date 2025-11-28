@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethereum Wallet</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+    <style>
+        :root {
+            --deep-purple: #0d0221;
+            --rich-purple: #1b0938;
+            --vibrant-purple: #6930c3;
+            --bright-purple: #7b2cbf;
+            --electric-purple: #9d4edd;
+            --accent-cyan: #00f5ff;
+            --text-white: #f0f0f0;
+            --text-muted: #b8b8d1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(ellipse at top, var(--rich-purple), var(--deep-purple));
+            min-height: 100vh;
+            color: var(--text-white);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(109, 48, 195, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(157, 78, 221, 0.15) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-5%, 5%) rotate(120deg); }
+            66% { transform: translate(5%, -5%) rotate(240deg); }
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .eth-icon {
+            width: 70px;
+            height: 70px;
+            margin-bottom: 20px;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(109, 48, 195, 0.5)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(157, 78, 221, 0.8)); }
+        }
+
+        .logo h1 {
+            font-size: 36px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, var(--electric-purple), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        .card {
+            background: rgba(27, 9, 56, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 45px 35px;
+            border: 2px solid rgba(157, 78, 221, 0.2);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .form-group {
+            margin-bottom: 28px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 16px 18px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(157, 78, 221, 0.3);
+            border-radius: 16px;
+            color: var(--text-white);
+            font-size: 16px;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-group textarea {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--vibrant-purple);
+            background: rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 0 4px rgba(109, 48, 195, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Outfit', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--vibrant-purple), var(--bright-purple));
+            color: var(--text-white);
+            box-shadow: 0 8px 24px rgba(109, 48, 195, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(109, 48, 195, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(157, 78, 221, 0.15);
+            color: var(--text-white);
+            border: 2px solid rgba(157, 78, 221, 0.4);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(157, 78, 221, 0.25);
+            border-color: var(--vibrant-purple);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .balance-card {
+            text-align: center;
+            padding: 40px 30px;
+            background: linear-gradient(135deg, rgba(109, 48, 195, 0.2), rgba(157, 78, 221, 0.1));
+            border-radius: 24px;
+            margin-bottom: 40px;
+            border: 2px solid rgba(157, 78, 221, 0.3);
+        }
+
+        .balance-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        .balance-amount {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 56px;
+            font-weight: 700;
+            margin: 15px 0;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--electric-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+
+        .balance-usd {
+            font-size: 22px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .action-card {
+            padding: 24px 20px;
+            background: rgba(109, 48, 195, 0.1);
+            border: 2px solid rgba(157, 78, 221, 0.2);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .action-card:hover {
+            background: rgba(109, 48, 195, 0.2);
+            border-color: var(--vibrant-purple);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(109, 48, 195, 0.3);
+        }
+
+        .action-card svg {
+            width: 36px;
+            height: 36px;
+            margin-bottom: 12px;
+            stroke: var(--electric-purple);
+        }
+
+        .action-card .label {
+            font-weight: 700;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .menu-item {
+            padding: 18px;
+            background: rgba(157, 78, 221, 0.1);
+            border: 1px solid rgba(157, 78, 221, 0.3);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .menu-item:hover {
+            background: rgba(157, 78, 221, 0.2);
+            border-color: var(--vibrant-purple);
+        }
+
+        .address-display {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 18px;
+            border-radius: 14px;
+            word-break: break-all;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(157, 78, 221, 0.2);
+            color: var(--accent-cyan);
+        }
+
+        .qr-display {
+            width: 220px;
+            height: 220px;
+            margin: 25px auto;
+            background: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--deep-purple);
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--rich-purple);
+            border-radius: 28px;
+            padding: 40px 35px;
+            max-width: 440px;
+            width: 100%;
+            border: 2px solid rgba(157, 78, 221, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-header h2 {
+            font-size: 28px;
+            font-weight: 900;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-white);
+            font-size: 32px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(157, 78, 221, 0.2);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--vibrant-purple), var(--bright-purple));
+            color: var(--text-white);
+            padding: 18px 28px;
+            border-radius: 14px;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(109, 48, 195, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 2000;
+            border: 2px solid rgba(157, 78, 221, 0.5);
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .info-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 16px 0;
+            line-height: 1.6;
+        }
+
+        .copy-btn {
+            font-size: 14px;
+            padding: 12px;
+        }
+
+        .network-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            background: rgba(0, 245, 255, 0.15);
+            border: 1px solid rgba(0, 245, 255, 0.3);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Create Wallet Screen -->
+        <div id="createScreen">
+            <div class="logo">
+                <svg class="eth-icon" viewBox="0 0 256 417" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#000000" d="M127.961 0l-2.795 9.5v275.668l2.795 2.79 127.962-75.638z"/>
+                    <path fill="#000000" d="M127.962 0L0 212.32l127.962 75.639V154.158z"/>
+                    <path fill="#000000" d="M127.961 312.187l-1.575 1.92v98.199l1.575 4.601 128.038-180.32z"/>
+                    <path fill="#000000" d="M127.962 416.905v-104.72L0 236.585z"/>
+                    <path fill="#444444" d="M127.961 287.958l127.96-75.637-127.96-58.162z"/>
+                    <path fill="#444444" d="M0 212.32l127.96 75.638v-133.8z"/>
+                </svg>
+                <h1>Ethereum Wallet</h1>
+            </div>
+
+            <div class="card">
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="createNewWallet()">Create Wallet</button>
+                    <button class="btn btn-secondary" onclick="showImportModal()">Import Wallet</button>
+                </div>
+                <p class="info-text" style="text-align: center;">
+                    Secure your crypto with a self-custodial Ethereum wallet. Your keys, your crypto.
+                </p>
+            </div>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="dashboardScreen" class="hidden">
+            <div class="logo">
+                <svg class="eth-icon" viewBox="0 0 256 417" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#000000" d="M127.961 0l-2.795 9.5v275.668l2.795 2.79 127.962-75.638z"/>
+                    <path fill="#000000" d="M127.962 0L0 212.32l127.962 75.639V154.158z"/>
+                    <path fill="#000000" d="M127.961 312.187l-1.575 1.92v98.199l1.575 4.601 128.038-180.32z"/>
+                    <path fill="#000000" d="M127.962 416.905v-104.72L0 236.585z"/>
+                    <path fill="#444444" d="M127.961 287.958l127.96-75.637-127.96-58.162z"/>
+                    <path fill="#444444" d="M0 212.32l127.96 75.638v-133.8z"/>
+                </svg>
+                <h1>Ethereum Wallet</h1>
+            </div>
+
+            <div class="card">
+                <div style="text-align: center;">
+                    <span class="network-badge">Ethereum Mainnet</span>
+                </div>
+
+                <div class="balance-card">
+                    <div class="balance-label">Your Balance</div>
+                    <div class="balance-amount" id="ethBalance">0.0000</div>
+                    <div class="balance-usd" id="usdBalance">$0.00 USD</div>
+                </div>
+
+                <div class="action-grid">
+                    <div class="action-card" onclick="showReceiveModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <polyline points="19 12 12 19 5 12"></polyline>
+                        </svg>
+                        <div class="label">Receive</div>
+                    </div>
+                    <div class="action-card" onclick="showSendModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="19" x2="12" y2="5"></line>
+                            <polyline points="5 12 12 5 19 12"></polyline>
+                        </svg>
+                        <div class="label">Send</div>
+                    </div>
+                </div>
+
+                <div class="menu-grid">
+                    <div class="menu-item" onclick="showBuyModal()">Buy ETH</div>
+                    <div class="menu-item" onclick="showSwapModal()">Swap</div>
+                    <div class="menu-item" onclick="showMerchantModal()">Merchants</div>
+                    <div class="menu-item" onclick="showATMModal()">ATMs</div>
+                </div>
+
+                <button class="btn btn-secondary" onclick="logout()" style="margin-top: 30px;">Disconnect</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Wallet Modal -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Import Wallet</h2>
+                <button class="close-btn" onclick="closeModal('importModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Private Key or Seed Phrase</label>
+                <textarea id="importKey" placeholder="Enter your private key or 12/24 word seed phrase"></textarea>
+            </div>
+            <p class="info-text">
+                ⚠️ Never share your private key or seed phrase. We don't store this information.
+            </p>
+            <button class="btn btn-primary" onclick="importWallet()">Import Wallet</button>
+        </div>
+    </div>
+
+    <!-- Receive Modal -->
+    <div id="receiveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Receive ETH</h2>
+                <button class="close-btn" onclick="closeModal('receiveModal')">&times;</button>
+            </div>
+            <p class="info-text">Share your address to receive ETH</p>
+            <div class="address-display" id="walletAddress"></div>
+            <div class="qr-display">QR Code Here</div>
+            <button class="btn btn-primary copy-btn" onclick="copyAddress()">Copy Address</button>
+        </div>
+    </div>
+
+    <!-- Send Modal -->
+    <div id="sendModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Send ETH</h2>
+                <button class="close-btn" onclick="closeModal('sendModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Recipient Address</label>
+                <input type="text" id="recipientAddress" placeholder="0x...">
+            </div>
+            <button class="btn btn-secondary copy-btn" onclick="pasteAddress()" style="margin-bottom: 20px;">Paste Address</button>
+            <div class="form-group">
+                <label>Amount (ETH)</label>
+                <input type="number" id="sendAmount" placeholder="0.00" step="0.0001">
+            </div>
+            <div class="form-group">
+                <label>Amount (USD)</label>
+                <input type="number" id="sendAmountUSD" placeholder="0.00" step="0.01" oninput="convertUSDtoETH()">
+            </div>
+            <button class="btn btn-primary" onclick="sendETH()">Send ETH</button>
+        </div>
+    </div>
+
+    <!-- Buy Modal -->
+    <div id="buyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Buy ETH</h2>
+                <button class="close-btn" onclick="closeModal('buyModal')">&times;</button>
+            </div>
+            <p class="info-text">Popular exchanges to buy ETH:</p>
+            <div class="menu-grid" style="margin: 20px 0;">
+                <div class="menu-item" onclick="openExchange('coinbase')">Coinbase</div>
+                <div class="menu-item" onclick="openExchange('kraken')">Kraken</div>
+                <div class="menu-item" onclick="openExchange('binance')">Binance</div>
+                <div class="menu-item" onclick="openExchange('uniswap')">Uniswap</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Swap Modal -->
+    <div id="swapModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Swap Tokens</h2>
+                <button class="close-btn" onclick="closeModal('swapModal')">&times;</button>
+            </div>
+            <p class="info-text">Use decentralized exchanges:</p>
+            <div class="menu-grid" style="margin: 20px 0;">
+                <div class="menu-item" onclick="openDEX('uniswap')">Uniswap</div>
+                <div class="menu-item" onclick="openDEX('sushiswap')">SushiSwap</div>
+                <div class="menu-item" onclick="openDEX('curve')">Curve</div>
+                <div class="menu-item" onclick="openDEX('1inch')">1inch</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Merchant Modal -->
+    <div id="merchantModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Find Merchants</h2>
+                <button class="close-btn" onclick="closeModal('merchantModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Enter Location</label>
+                <input type="text" id="merchantLocation" placeholder="City, State or ZIP">
+            </div>
+            <p class="info-text">Find businesses accepting crypto payments</p>
+            <button class="btn btn-primary" onclick="searchMerchants()">Search Nearby</button>
+        </div>
+    </div>
+
+    <!-- ATM Modal -->
+    <div id="atmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Find Crypto ATMs</h2>
+                <button class="close-btn" onclick="closeModal('atmModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Enter Location</label>
+                <input type="text" id="atmLocation" placeholder="City, State or ZIP">
+            </div>
+            <p class="info-text">Locate cryptocurrency ATMs near you</p>
+            <button class="btn btn-primary" onclick="searchATMs()">Search Nearby</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const ETH_PRICE = 2450.00;
+        let wallet = null;
+        let provider = null;
+
+        // Initialize ethers provider (using public Infura endpoint)
+        async function initProvider() {
+            try {
+                // Using Cloudflare's public Ethereum gateway
+                provider = new ethers.providers.JsonRpcProvider('https://cloudflare-eth.com');
+                return provider;
+            } catch (error) {
+                console.error('Provider initialization failed:', error);
+                return null;
+            }
+        }
+
+        async function createNewWallet() {
+            try {
+                // Check if ethers is loaded
+                if (typeof ethers === 'undefined') {
+                    showToast('Error: Ethers.js library not loaded');
+                    return;
+                }
+
+                wallet = ethers.Wallet.createRandom();
+                const address = wallet.address;
+                const privateKey = wallet.privateKey;
+                const mnemonic = wallet.mnemonic.phrase;
+
+                // Show seed phrase to user (in production, show secure backup UI)
+                alert(`IMPORTANT: Save your seed phrase securely!\n\n${mnemonic}\n\nYour Address: ${address}\n\nNever share this with anyone!`);
+                
+                await connectWallet();
+            } catch (error) {
+                console.error('Wallet creation error:', error);
+                showToast('Error creating wallet: ' + error.message);
+            }
+        }
+
+        function showImportModal() {
+            document.getElementById('importModal').classList.add('active');
+        }
+
+        async function importWallet() {
+            let input = document.getElementById('importKey').value.trim();
+            
+            try {
+                if (typeof ethers === 'undefined') {
+                    showToast('Error: Ethers.js library not loaded');
+                    return;
+                }
+
+                if (input.includes(' ')) {
+                    // Mnemonic phrase
+                    wallet = ethers.Wallet.fromMnemonic(input);
+                } else {
+                    // Private key
+                    if (!input.startsWith('0x')) {
+                        input = '0x' + input;
+                    }
+                    wallet = new ethers.Wallet(input);
+                }
+                
+                closeModal('importModal');
+                showToast('Wallet imported successfully!');
+                await connectWallet();
+            } catch (error) {
+                console.error('Import error:', error);
+                showToast('Invalid private key or seed phrase');
+            }
+        }
+
+        async function connectWallet() {
+            if (!wallet) return;
+            
+            await initProvider();
+            if (provider) {
+                wallet = wallet.connect(provider);
+            }
+
+            document.getElementById('createScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.remove('hidden');
+            document.getElementById('walletAddress').textContent = wallet.address;
+            
+            await updateBalance();
+        }
+
+        async function updateBalance() {
+            if (!wallet || !provider) {
+                document.getElementById('ethBalance').textContent = '0.0000';
+                document.getElementById('usdBalance').textContent = '$0.00 USD';
+                return;
+            }
+
+            try {
+                const balance = await provider.getBalance(wallet.address);
+                const ethBalance = parseFloat(ethers.utils.formatEther(balance));
+                
+                document.getElementById('ethBalance').textContent = ethBalance.toFixed(4);
+                document.getElementById('usdBalance').textContent = '$' + (ethBalance * ETH_PRICE).toFixed(2) + ' USD';
+            } catch (error) {
+                console.error('Balance update failed:', error);
+                document.getElementById('ethBalance').textContent = '0.0000';
+                document.getElementById('usdBalance').textContent = '$0.00 USD';
+            }
+        }
+
+        function logout() {
+            wallet = null;
+            provider = null;
+            document.getElementById('dashboardScreen').classList.add('hidden');
+            document.getElementById('createScreen').classList.remove('hidden');
+            showToast('Wallet disconnected');
+        }
+
+        function showReceiveModal() {
+            if (wallet) {
+                document.getElementById('receiveModal').classList.add('active');
+            }
+        }
+
+        function showSendModal() {
+            document.getElementById('sendModal').classList.add('active');
+        }
+
+        function showBuyModal() {
+            document.getElementById('buyModal').classList.add('active');
+        }
+
+        function showSwapModal() {
+            document.getElementById('swapModal').classList.add('active');
+        }
+
+        function showMerchantModal() {
+            document.getElementById('merchantModal').classList.add('active');
+        }
+
+        function showATMModal() {
+            document.getElementById('atmModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function copyAddress() {
+            const address = document.getElementById('walletAddress').textContent;
+            navigator.clipboard.writeText(address).then(() => {
+                showToast('Address copied to clipboard!');
+            });
+        }
+
+        async function pasteAddress() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('recipientAddress').value = text;
+                showToast('Address pasted');
+            } catch (err) {
+                showToast('Please paste manually');
+            }
+        }
+
+        function convertUSDtoETH() {
+            const usdAmount = parseFloat(document.getElementById('sendAmountUSD').value) || 0;
+            const ethAmount = usdAmount / ETH_PRICE;
+            document.getElementById('sendAmount').value = ethAmount.toFixed(6);
+        }
+
+        async function sendETH() {
+            if (!wallet || !provider) {
+                showToast('Wallet not connected');
+                return;
+            }
+
+            const recipient = document.getElementById('recipientAddress').value;
+            const amount = document.getElementById('sendAmount').value;
+
+            if (!ethers.utils.isAddress(recipient)) {
+                showToast('Invalid recipient address');
+                return;
+            }
+
+            if (!amount || parseFloat(amount) <= 0) {
+                showToast('Invalid amount');
+                return;
+            }
+
+            try {
+                showToast('Preparing transaction...');
+                
+                const tx = {
+                    to: recipient,
+                    value: ethers.utils.parseEther(amount)
+                };
+
+                const transaction = await wallet.sendTransaction(tx);
+                showToast('Transaction sent! Hash: ' + transaction.hash.substring(0, 10) + '...');
+                
+                await transaction.wait();
+                showToast('Transaction confirmed!');
+                
+                closeModal('sendModal');
+                await updateBalance();
+            } catch (error) {
+                showToast('Transaction failed: ' + error.message);
+            }
+        }
+
+        function openExchange(exchange) {
+            const urls = {
+                coinbase: 'https://www.coinbase.com/buy-ethereum',
+                kraken: 'https://www.kraken.com/prices/ethereum',
+                binance: 'https://www.binance.com/en/buy-sell-crypto',
+                uniswap: 'https://app.uniswap.org/'
+            };
+            if (urls[exchange]) {
+                window.open(urls[exchange], '_blank');
+                showToast('Opening ' + exchange + '...');
+            }
+        }
+
+        function openDEX(dex) {
+            const urls = {
+                uniswap: 'https://app.uniswap.org/',
+                sushiswap: 'https://www.sushi.com/swap',
+                curve: 'https://curve.fi/',
+                '1inch': 'https://app.1inch.io/'
+            };
+            if (urls[dex]) {
+                window.open(urls[dex], '_blank');
+                showToast('Opening ' + dex + '...');
+            }
+        }
+
+        function searchMerchants() {
+            const location = document.getElementById('merchantLocation').value;
+            if (location) {
+                window.open('https://coinmap.org/', '_blank');
+                showToast('Opening merchant map...');
+                closeModal('merchantModal');
+            } else {
+                showToast('Please enter a location');
+            }
+        }
+
+        function searchATMs() {
+            const location = document.getElementById('atmLocation').value;
+            if (location) {
+                window.open('https://coinatmradar.com/', '_blank');
+                showToast('Opening ATM finder...');
+                closeModal('atmModal');
+            } else {
+                showToast('Please enter a location');
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Close modal when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

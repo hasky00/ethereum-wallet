@@ -1,0 +1,37 @@
+{
+  "name": "ethereum-wallet",
+  "version": "1.0.0",
+  "description": "Secure self-custodial Ethereum wallet with web interface and CLI tools",
+  "main": "eth-wallet-generator.js",
+  "scripts": {
+    "generate": "node eth-wallet-generator.js",
+    "generate:prod": "node eth-wallet-production.js",
+    "test": "node eth-wallet-generator.js > test-output.json && cat test-output.json"
+  },
+  "keywords": [
+    "ethereum",
+    "wallet",
+    "crypto",
+    "blockchain",
+    "bip39",
+    "bip44",
+    "web3",
+    "ethers"
+  ],
+  "author": "Ethereum Wallet Project",
+  "license": "MIT",
+  "dependencies": {
+    "ethers": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ethereum-wallet.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/ethereum-wallet/issues"
+  },
+  "homepage": "https://github.com/yourusername/ethereum-wallet#readme"
+}
