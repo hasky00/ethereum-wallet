@@ -10,7 +10,7 @@ const config = {
     environment: 'production'  // ALWAYS 'production' for real use
 };
 
-function generateEthereumWallet(config) {
+function generateEthereumWallet(config, logger = console) {
     const wallet = ethers.Wallet.createRandom();
     
     const output = {
@@ -136,31 +136,53 @@ function generateEthereumWallet(config) {
         ]
     };
     
-    // In production, guide user to backup but don't display
+    // In production, guide user to backup but don't display mnemonic unless explicitly enabled
     if (config.environment === 'production') {
-        console.log('\n════════════════════════════════════════════════════════');
-        console.log('🔐 SECURE WALLET GENERATION COMPLETE');
-        console.log('════════════════════════════════════════════════════════\n');
-        console.log('Your 12-word seed phrase has been generated.');
-        console.log('It is displayed ONCE below - write it down NOW.\n');
-        console.log('════════════════════════════════════════════════════════');
-        console.log('SEED PHRASE (write on paper, never digital):');
-        console.log('════════════════════════════════════════════════════════\n');
-        console.log(wallet.mnemonic.phrase);
-        console.log('\n════════════════════════════════════════════════════════');
-        console.log('⚠️  This will NOT be shown again');
-        console.log('⚠️  Loss of this phrase = loss of ALL funds');
-        console.log('════════════════════════════════════════════════════════\n');
-        
-        // Pause to allow user to write down
-        console.log('Press Enter after writing down your seed phrase...\n');
+        logger.log('\n════════════════════════════════════════════════════════');
+        logger.log('🔐 SECURE WALLET GENERATION COMPLETE');
+        logger.log('════════════════════════════════════════════════════════\n');
+
+        if (config.include_seed_phrase === 'yes') {
+            output.production_notice.instruction = 'Seed phrase displayed once for immediate offline backup';
+            output.production_notice.message = '✅ Wallet generated and mnemonic shown a single time';
+
+            logger.log('Your 12-word seed phrase has been generated.');
+            logger.log('It is displayed ONCE below - write it down NOW.\n');
+            logger.log('════════════════════════════════════════════════════════');
+            logger.log('SEED PHRASE (write on paper, never digital):');
+            logger.log('════════════════════════════════════════════════════════\n');
+            logger.log(wallet.mnemonic.phrase);
+            logger.log('\n════════════════════════════════════════════════════════');
+            logger.log('⚠️  This will NOT be shown again');
+            logger.log('⚠️  Loss of this phrase = loss of ALL funds');
+            logger.log('════════════════════════════════════════════════════════\n');
+            logger.log('Press Enter after writing down your seed phrase...\n');
+
+            output.production_notice.seed_phrase_displayed = true;
+        } else {
+            output.production_notice.instruction = 'Mnemonic withheld in production; use an offline channel to export';
+            output.production_notice.message = '✅ Wallet generated securely without exposing mnemonic';
+
+            logger.log('Seed phrase generated securely and must be backed up OFFLINE.');
+            logger.log('It is intentionally NOT displayed in production mode.');
+            logger.log('Use an air-gapped flow to export the mnemonic safely.\n');
+
+            output.production_notice.seed_phrase_displayed = false;
+        }
     }
     
     return output;
 }
 
-const result = generateEthereumWallet(config);
+if (require.main === module) {
+    const result = generateEthereumWallet(config);
 
-if (config.output_format === 'json') {
-    console.log(JSON.stringify(result, null, 2));
+    if (config.output_format === 'json') {
+        console.log(JSON.stringify(result, null, 2));
+    }
 }
+
+module.exports = {
+    generateEthereumWallet,
+    productionConfig: config
+};
