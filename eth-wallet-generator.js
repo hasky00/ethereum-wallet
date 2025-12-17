@@ -136,10 +136,17 @@ function generateEthereumWallet(config) {
     return output;
 }
 
-// Generate and output
-const result = generateEthereumWallet(config);
+// Generate and output when executed directly
+if (require.main === module) {
+    const result = generateEthereumWallet(config);
 
-if (config.output_format === 'json') {
-    console.log(JSON.stringify(result, null, 2));
+    if (config.output_format === 'json') {
+        console.log(JSON.stringify(result, null, 2));
+    }
 }
+
+module.exports = {
+    generateEthereumWallet,
+    defaultConfig: config
+};
 

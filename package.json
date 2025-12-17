@@ -6,7 +6,7 @@
   "scripts": {
     "generate": "node eth-wallet-generator.js",
     "generate:prod": "node eth-wallet-production.js",
-    "test": "node eth-wallet-generator.js > test-output.json && cat test-output.json"
+    "test": "node test/eth-wallet-generator.test.js"
   },
   "keywords": [
     "ethereum",

@@ -217,6 +217,54 @@
             font-weight: 500;
         }
 
+        .market-card {
+            margin-top: 16px;
+            padding: 16px 18px;
+            border-radius: 18px;
+            border: 1px solid rgba(157, 78, 221, 0.25);
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.08), rgba(157, 78, 221, 0.12));
+        }
+
+        .market-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .market-price {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .change {
+            padding: 6px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .change.positive {
+            color: #25f58b;
+            border: 1px solid rgba(37, 245, 139, 0.35);
+        }
+
+        .change.negative {
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 107, 107, 0.35);
+        }
+
+        .market-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
         .action-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -469,6 +517,20 @@
                     <div class="balance-usd" id="usdBalance">$0.00 USD</div>
                 </div>
 
+                <div class="market-card" aria-live="polite">
+                    <div class="market-header">
+                        <div>
+                            <div class="balance-label">Live ETH Price</div>
+                            <div class="market-price" id="marketPrice">$0.00 USD</div>
+                        </div>
+                        <div class="change" id="marketChange">0.00% 24h</div>
+                    </div>
+                    <div class="market-meta">
+                        <span id="marketStatus">Fetching secure market data...</span>
+                        <span id="marketUpdatedAt">--:--:--</span>
+                    </div>
+                </div>
+
                 <div class="action-grid">
                     <div class="action-card" onclick="showReceiveModal()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -623,9 +685,12 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        const ETH_PRICE = 2450.00;
+        const MARKET_API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true&precision=4';
+        const MARKET_REFRESH_MS = 60000;
+        let ethPriceUSD = 2450.00;
         let wallet = null;
         let provider = null;
+        let marketIntervalId = null;
 
         // Initialize ethers provider (using public Infura endpoint)
         async function initProvider() {
@@ -637,6 +702,64 @@
                 console.error('Provider initialization failed:', error);
                 return null;
             }
+        }
+
+        async function fetchMarketData() {
+            try {
+                const response = await fetch(MARKET_API_URL, { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const payload = await response.json();
+                const market = payload?.ethereum;
+
+                if (!market || typeof market.usd !== 'number') {
+                    throw new Error('Malformed market data');
+                }
+
+                const price = market.usd;
+                const change = typeof market.usd_24h_change === 'number' ? market.usd_24h_change : 0;
+
+                ethPriceUSD = price;
+                updateMarketUI({ price, change });
+            } catch (error) {
+                console.error('Market data fetch failed:', error);
+                document.getElementById('marketStatus').textContent = 'Live price unavailable';
+            }
+        }
+
+        function updateMarketUI({ price, change }) {
+            const priceEl = document.getElementById('marketPrice');
+            const changeEl = document.getElementById('marketChange');
+            const statusEl = document.getElementById('marketStatus');
+            const updatedAtEl = document.getElementById('marketUpdatedAt');
+
+            if (!priceEl || !changeEl || !statusEl || !updatedAtEl) return;
+
+            priceEl.textContent = `$${price.toFixed(2)} USD`;
+            const roundedChange = change.toFixed(2);
+            changeEl.textContent = `${roundedChange}% 24h`;
+            changeEl.className = `change ${change >= 0 ? 'positive' : 'negative'}`;
+            statusEl.textContent = 'Live market data (CoinGecko)';
+            updatedAtEl.textContent = new Date().toLocaleTimeString();
+
+            // Keep balances aligned with the latest price
+            updateBalance();
+        }
+
+        function startMarketWatcher() {
+            fetchMarketData();
+            if (marketIntervalId) {
+                clearInterval(marketIntervalId);
+            }
+            marketIntervalId = setInterval(fetchMarketData, MARKET_REFRESH_MS);
+        }
+
+        function getEffectivePrice() {
+            return Number.isFinite(ethPriceUSD) && ethPriceUSD > 0 ? ethPriceUSD : 2450.0;
+        }
+
+        function openSafeExternal(url) {
+            window.open(url, '_blank', 'noopener,noreferrer');
         }
 
         async function createNewWallet() {
@@ -720,9 +843,10 @@
             try {
                 const balance = await provider.getBalance(wallet.address);
                 const ethBalance = parseFloat(ethers.utils.formatEther(balance));
-                
+
                 document.getElementById('ethBalance').textContent = ethBalance.toFixed(4);
-                document.getElementById('usdBalance').textContent = '$' + (ethBalance * ETH_PRICE).toFixed(2) + ' USD';
+                const price = getEffectivePrice();
+                document.getElementById('usdBalance').textContent = '$' + (ethBalance * price).toFixed(2) + ' USD';
             } catch (error) {
                 console.error('Balance update failed:', error);
                 document.getElementById('ethBalance').textContent = '0.0000';
@@ -787,7 +911,8 @@
 
         function convertUSDtoETH() {
             const usdAmount = parseFloat(document.getElementById('sendAmountUSD').value) || 0;
-            const ethAmount = usdAmount / ETH_PRICE;
+            const price = getEffectivePrice();
+            const ethAmount = price ? usdAmount / price : 0;
             document.getElementById('sendAmount').value = ethAmount.toFixed(6);
         }
 
@@ -839,7 +964,7 @@
                 uniswap: 'https://app.uniswap.org/'
             };
             if (urls[exchange]) {
-                window.open(urls[exchange], '_blank');
+                openSafeExternal(urls[exchange]);
                 showToast('Opening ' + exchange + '...');
             }
         }
@@ -852,7 +977,7 @@
                 '1inch': 'https://app.1inch.io/'
             };
             if (urls[dex]) {
-                window.open(urls[dex], '_blank');
+                openSafeExternal(urls[dex]);
                 showToast('Opening ' + dex + '...');
             }
         }
@@ -860,7 +985,7 @@
         function searchMerchants() {
             const location = document.getElementById('merchantLocation').value;
             if (location) {
-                window.open('https://coinmap.org/', '_blank');
+                openSafeExternal('https://coinmap.org/');
                 showToast('Opening merchant map...');
                 closeModal('merchantModal');
             } else {
@@ -871,7 +996,7 @@
         function searchATMs() {
             const location = document.getElementById('atmLocation').value;
             if (location) {
-                window.open('https://coinatmradar.com/', '_blank');
+                openSafeExternal('https://coinatmradar.com/');
                 showToast('Opening ATM finder...');
                 closeModal('atmModal');
             } else {
@@ -896,6 +1021,8 @@
                 }
             });
         });
+
+        startMarketWatcher();
     </script>
 </body>
 </html>
