@@ -1,4 +1,5 @@
 const assert = require('assert');
+const ethers = require('ethers');
 const { generateEthereumWallet, defaultConfig } = require('../eth-wallet-generator');
 const { generateEthereumWallet: generateProdWallet, productionConfig } = require('../eth-wallet-production');
 
@@ -26,12 +27,16 @@ function testDevelopmentIncludesSensitiveData() {
 
 function testCustomDerivationPathRecorded() {
     const derivation_path = "m/44'/60'/0'/1/0";
+    const mnemonic = 'test test test test test test test test test test test junk';
     const result = generateEthereumWallet({
         ...defaultConfig,
-        derivation_path
+        derivation_path,
+        mnemonic
     });
 
     assert.strictEqual(result.cryptographic_details.derivation_path, derivation_path, 'Custom derivation path should be recorded');
+    const expectedAddress = ethers.Wallet.fromMnemonic(mnemonic, derivation_path).address;
+    assert.strictEqual(result.public_identifiers.address, expectedAddress, 'Derived address should match derivation path output');
 }
 
 function testProductionScriptDoesNotLeakMnemonic() {
