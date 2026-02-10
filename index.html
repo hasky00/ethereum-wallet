@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://api.coingecko.com https://cloudflare-eth.com https://rpc.sepolia.org; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://api.coingecko.com https://cloudflare-eth.com https://rpc.sepolia.org https://rpc.ankr.com https://ethereum.publicnode.com https://ethereum-sepolia.publicnode.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
     <title>Ethereum Wallet</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="vendor/ethers.umd.min.js"></script>
@@ -767,17 +767,25 @@
         const NETWORKS = {
             mainnet: {
                 name: 'Ethereum Mainnet',
-                rpcUrl: 'https://cloudflare-eth.com',
-                chainId: 1
+                chainId: 1,
+                rpcUrls: [
+                    'https://cloudflare-eth.com',
+                    'https://rpc.ankr.com/eth',
+                    'https://ethereum.publicnode.com'
+                ]
             },
             sepolia: {
                 name: 'Sepolia Testnet',
-                rpcUrl: 'https://rpc.sepolia.org',
-                chainId: 11155111
+                chainId: 11155111,
+                rpcUrls: [
+                    'https://rpc.sepolia.org',
+                    'https://rpc.ankr.com/eth_sepolia',
+                    'https://ethereum-sepolia.publicnode.com'
+                ]
             }
         };
 
-        let activeNetwork = 'mainnet';
+        let activeNetwork        let activeNetwork = 'mainnet';
         let ethPriceUSD = 2450.00;
         let wallet = null;
         let provider = null;
@@ -792,7 +800,12 @@
         async function initProvider() {
             try {
                 const network = NETWORKS[activeNetwork];
-                provider = new ethers.providers.JsonRpcProvider(network.rpcUrl, network.chainId);
+                const providers = network.rpcUrls.map((url, index) => ({
+                    provider: new ethers.providers.StaticJsonRpcProvider(url, network.chainId),
+                    weight: 1,
+                    priority: index + 1
+                }));
+                provider = new ethers.providers.FallbackProvider(providers, 1);
                 return provider;
             } catch (error) {
                 console.error('Provider initialization failed:', error);
@@ -800,7 +813,7 @@
             }
         }
 
-        async function applyNetworkSelection() {
+        async function applyNetworkSelection        async function applyNetworkSelection() {
             const select = document.getElementById('networkSelect');
             if (select && select.value) {
                 activeNetwork = select.value;
@@ -1055,15 +1068,39 @@
             try {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     await navigator.clipboard.writeText(address);
-                } else {
-                    fallbackCopyText(address);
+                    showToast('Address copied to clipboard!');
+                    return;
                 }
-                showToast('Address copied to clipboard!');
             } catch (err) {
-                fallbackCopyText(address);
-                showToast('Copy failed - please copy manually');
+                // fall through to fallback
+            }
+
+            if (fallbackCopyText(address)) {
+                showToast('Address copied to clipboard!');
+            } else {
+                window.prompt('Copy address:', address);
+                showToast('Copy address manually');
             }
         }
+
+        function fallbackCopyText(text) {
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'absolute';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                const success = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                return success;
+            } catch (err) {
+                return false;
+            }
+        }
+
+        async function pasteAddress
 
         function fallbackCopyText(text) {
             const textarea = document.createElement('textarea');
