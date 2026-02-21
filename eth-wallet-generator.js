@@ -7,20 +7,16 @@ const config = {
     output_format: 'json',
     include_seed_phrase: 'yes',
     derivation_path: "m/44'/60'/0'/0/0", // BIP44 Ethereum standard
-    environment: 'development'
+    environment: 'development',
+    mnemonic: null
 };
 
 // Generate Ethereum Wallet
 function generateEthereumWallet(config) {
-    // Generate random wallet with cryptographically secure entropy
-    const wallet = ethers.Wallet.createRandom();
-    
-    // Derive wallet at specific path if custom path provided
-    let derivedWallet = wallet;
-    if (config.derivation_path && config.derivation_path !== "m/44'/60'/0'/0/0") {
-        const hdNode = ethers.utils.HDNode.fromMnemonic(wallet.mnemonic.phrase);
-        derivedWallet = hdNode.derivePath(config.derivation_path);
-    }
+    // Generate or use provided mnemonic for deterministic tests
+    const baseMnemonic = config.mnemonic || ethers.Wallet.createRandom().mnemonic.phrase;
+    const derivationPath = config.derivation_path || "m/44'/60'/0'/0/0";
+    const derivedWallet = ethers.Wallet.fromMnemonic(baseMnemonic, derivationPath);
     
     const output = {
         wallet_type: config.wallet_type,
@@ -33,29 +29,39 @@ function generateEthereumWallet(config) {
             algorithm: 'ECDSA',
             hash_function: 'Keccak-256',
             key_derivation: 'BIP32/BIP39/BIP44',
-            derivation_path: config.derivation_path,
+            derivation_path: derivationPath,
             entropy_bits: 128
         },
         
         public_identifiers: {
-            address: wallet.address,
-            public_key: wallet.publicKey,
-            checksum_address: ethers.utils.getAddress(wallet.address)
+            address: derivedWallet.address,
+            public_key: derivedWallet.publicKey,
+            checksum_address: ethers.utils.getAddress(derivedWallet.address)
         },
         
         implementation_example: {
             initialization: {
                 language: 'JavaScript',
                 library: 'ethers.js v5+',
-                code: `const ethers = require('ethers');\nconst wallet = ethers.Wallet.fromMnemonic('YOUR_SEED_PHRASE');\nconsole.log(wallet.address);`
+                code: `const ethers = require('ethers');
+const wallet = ethers.Wallet.fromMnemonic('YOUR_SEED_PHRASE');
+console.log(wallet.address);`
             },
             signing_message: {
                 description: 'Sign arbitrary message',
-                code: `const message = "Hello Ethereum";\nconst signature = await wallet.signMessage(message);\nconsole.log(signature);`
+                code: `const message = "Hello Ethereum";
+const signature = await wallet.signMessage(message);
+console.log(signature);`
             },
             signing_transaction: {
                 description: 'Sign and send transaction',
-                code: `const tx = {\n  to: '0x...',\n  value: ethers.utils.parseEther('0.1'),\n  gasLimit: 21000\n};\nconst signedTx = await wallet.signTransaction(tx);\nconst receipt = await wallet.sendTransaction(tx);`
+                code: `const tx = {
+  to: '0x...',
+  value: ethers.utils.parseEther('0.1'),
+  gasLimit: 21000
+};
+const signedTx = await wallet.signTransaction(tx);
+const receipt = await wallet.sendTransaction(tx);`
             }
         },
         
@@ -119,10 +125,10 @@ function generateEthereumWallet(config) {
     // Include sensitive data only in development mode
     if (config.environment === 'development' && config.include_seed_phrase === 'yes') {
         output.sensitive_data = {
-            seed_phrase: wallet.mnemonic.phrase,
-            private_key: wallet.privateKey,
-            mnemonic_locale: wallet.mnemonic.locale,
-            word_count: wallet.mnemonic.phrase.split(' ').length,
+            seed_phrase: baseMnemonic,
+            private_key: derivedWallet.privateKey,
+            mnemonic_locale: derivedWallet.mnemonic.locale,
+            word_count: baseMnemonic.split(' ').length,
             WARNING: 'NEVER EXPOSE THESE VALUES IN PRODUCTION'
         };
     } else if (config.environment === 'production') {
@@ -136,10 +142,16 @@ function generateEthereumWallet(config) {
     return output;
 }
 
-// Generate and output
-const result = generateEthereumWallet(config);
+// Generate and output when executed directly
+if (require.main === module) {
+    const result = generateEthereumWallet(config);
 
-if (config.output_format === 'json') {
-    console.log(JSON.stringify(result, null, 2));
+    if (config.output_format === 'json') {
+        console.log(JSON.stringify(result, null, 2));
+    }
 }
 
+module.exports = {
+    generateEthereumWallet,
+    defaultConfig: config
+};

@@ -6,7 +6,7 @@
   "scripts": {
     "generate": "node eth-wallet-generator.js",
     "generate:prod": "node eth-wallet-production.js",
-    "test": "node eth-wallet-generator.js > test-output.json && cat test-output.json"
+    "test": "node test/eth-wallet-generator.test.js"
   },
   "keywords": [
     "ethereum",
@@ -28,10 +28,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/ethereum-wallet.git"
+    "url": "https://github.com/hasky00/ethereum-wallet.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/ethereum-wallet/issues"
+    "url": "https://github.com/hasky00/ethereum-wallet/issues"
   },
-  "homepage": "https://github.com/yourusername/ethereum-wallet#readme"
+  "homepage": "https://github.com/hasky00/ethereum-wallet#readme"
 }
