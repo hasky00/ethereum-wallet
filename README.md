@@ -9,16 +9,19 @@ A complete Ethereum wallet solution with web interface and secure wallet generat
 ## ✨ Features
 
 ### 🌐 Web Interface (`ethereum-wallet.html`)
-- **Create New Wallet**: Generate secure Ethereum wallets with BIP39 seed phrases
-- **Import Wallet**: Import existing wallets via private key or seed phrase
-- **Send/Receive ETH**: Full transaction management with USD conversion
-- **Balance Display**: Real-time ETH balance with USD equivalent
+- **Create New Wallet**: Generate secure Ethereum wallets with BIP39 seed phrases + re-type confirmation
+- **Import Wallet**: Import existing wallets via private key or seed phrase (validated)
+- **Send/Receive ETH**: Full transaction management with USD conversion, gas estimation, Max button, and Etherscan links
+- **Real QR Codes**: Scan-friendly QR in the Receive screen (generated 100% client-side)
+- **Live Balance + Price**: Real-time ETH balance + CoinGecko price feed (with cache)
 - **Buy ETH**: Direct links to major exchanges (Coinbase, Kraken, Binance, Uniswap)
 - **Token Swap**: Integration with DEXes (Uniswap, SushiSwap, Curve, 1inch)
 - **Merchant Finder**: Locate crypto-accepting businesses (CoinMap)
 - **ATM Locator**: Find cryptocurrency ATMs (CoinATMRadar)
+- **PWA Support**: Installable on mobile/desktop, basic offline shell
 - **Purple Theme**: Beautiful gradient UI with black ETH icon
 - **Mobile Responsive**: Works on desktop and mobile devices
+- **Strong warnings**: Persistent experimental/testnet banners + clear disclaimers
 
 ### 🔧 Wallet Generator Tools
 - **Development Mode** (`eth-wallet-generator.js`): Full output for testing

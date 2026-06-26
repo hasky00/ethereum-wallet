@@ -1,0 +1,18 @@
+{
+  "name": "Ethereum Wallet",
+  "short_name": "ETH Wallet",
+  "description": "Secure self-custodial Ethereum wallet. Create, import, send & receive ETH. Testnet ready.",
+  "start_url": "./ethereum-wallet.html",
+  "display": "standalone",
+  "background_color": "#0d0221",
+  "theme_color": "#1b0938",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 417'%3E%3Cpath fill='%236930c3' d='M127.961 0l-2.795 9.5v275.668l2.795 2.79 127.962-75.638z'/%3E%3Cpath fill='%239d4edd' d='M127.962 0L0 212.32l127.962 75.639V154.158z'/%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["finance", "blockchain", "crypto"]
+}

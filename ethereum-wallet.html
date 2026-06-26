@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://api.coingecko.com https://cloudflare-eth.com https://rpc.sepolia.org https://rpc.ankr.com https://ethereum.publicnode.com https://ethereum-sepolia.publicnode.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
     <title>Ethereum Wallet</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1b0938">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="vendor/ethers.umd.min.js"></script>
+    <script src="vendor/qrcode.min.js"></script>
     <style>
         :root {
             --deep-purple: #0d0221;
@@ -513,6 +516,19 @@
         .seed-confirm {
             margin-top: 12px;
         }
+
+        .warning-banner {
+            background: rgba(255, 200, 0, 0.15);
+            border: 1px solid rgba(255, 200, 0, 0.4);
+            color: #ffeb3b;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -531,6 +547,9 @@
                 <h1>Ethereum Wallet</h1>
             </div>
 
+            <div class="warning-banner">
+                ⚠️ Experimental software • Prefer Sepolia testnet • Not audited • Test with tiny amounts only
+            </div>
             <div class="card">
                 <div class="btn-group">
                     <button class="btn btn-primary" onclick="createNewWallet()">Create Wallet</button>
@@ -557,6 +576,9 @@
             </div>
 
             <div class="card">
+                <div class="warning-banner" style="margin-bottom:16px;">
+                    ⚠️ Experimental • Not audited • Verify all txs • Use at your own risk
+                </div>
                 <div class="network-row">
                     <span class="network-badge" id="networkBadge">Ethereum Mainnet</span>
                     <select class="network-select" id="networkSelect" onchange="applyNetworkSelection()">
@@ -609,7 +631,10 @@
                     <div class="menu-item" onclick="showATMModal()">ATMs</div>
                 </div>
 
-                <button class="btn btn-secondary" onclick="logout()" style="margin-top: 30px;">Disconnect</button>
+                <div style="margin-top:18px; font-size:11px; color:var(--text-muted); text-align:center; opacity:0.85;">
+                    Session is memory-only. Refresh = reload from seed or import again.
+                </div>
+                <button class="btn btn-secondary" onclick="logout()" style="margin-top: 16px;">Disconnect</button>
             </div>
         </div>
     </div>
@@ -664,7 +689,7 @@
             </div>
             <p class="info-text">Share your address to receive ETH</p>
             <div class="address-display" id="walletAddress"></div>
-            <div class="qr-display">QR Code Here</div>
+            <div id="qr-code" style="width:200px;height:200px;margin:20px auto;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;"></div>
             <button class="btn btn-primary copy-btn" onclick="copyAddress()">Copy Address</button>
         </div>
     </div>
@@ -683,12 +708,16 @@
             <button class="btn btn-secondary copy-btn" onclick="pasteAddress()" style="margin-bottom: 20px;">Paste Address</button>
             <div class="form-group">
                 <label>Amount (ETH)</label>
-                <input type="number" id="sendAmount" placeholder="0.00" step="0.0001">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="number" id="sendAmount" placeholder="0.00" step="0.0001" style="flex:1;">
+                    <button type="button" class="btn btn-secondary" onclick="setMaxAmount()" style="width:auto; padding:10px 14px; font-size:13px; text-transform:none; letter-spacing:0;">Max</button>
+                </div>
             </div>
             <div class="form-group">
                 <label>Amount (USD)</label>
                 <input type="number" id="sendAmountUSD" placeholder="0.00" step="0.01" oninput="convertUSDtoETH()">
             </div>
+            <div id="send-fee-hint" style="font-size:12px; color:var(--text-muted); margin:-8px 0 12px 4px; min-height:16px;"></div>
             <button class="btn btn-primary" onclick="sendETH()">Send ETH</button>
         </div>
     </div>
@@ -702,10 +731,10 @@
             </div>
             <p class="info-text">Popular exchanges to buy ETH:</p>
             <div class="menu-grid" style="margin: 20px 0;">
-                <div class="menu-item" onclick="openExchange('coinbase')">Coinbase</div>
-                <div class="menu-item" onclick="openExchange('kraken')">Kraken</div>
-                <div class="menu-item" onclick="openExchange('binance')">Binance</div>
-                <div class="menu-item" onclick="openExchange('uniswap')">Uniswap</div>
+                <a class="menu-item" href="https://www.coinbase.com/buy-ethereum" target="_blank" rel="noopener noreferrer">Coinbase</a>
+                <a class="menu-item" href="https://www.kraken.com/prices/ethereum" target="_blank" rel="noopener noreferrer">Kraken</a>
+                <a class="menu-item" href="https://www.binance.com/en/buy-sell-crypto" target="_blank" rel="noopener noreferrer">Binance</a>
+                <a class="menu-item" href="https://app.uniswap.org/" target="_blank" rel="noopener noreferrer">Uniswap</a>
             </div>
         </div>
     </div>
@@ -719,10 +748,10 @@
             </div>
             <p class="info-text">Use decentralized exchanges:</p>
             <div class="menu-grid" style="margin: 20px 0;">
-                <div class="menu-item" onclick="openDEX('uniswap')">Uniswap</div>
-                <div class="menu-item" onclick="openDEX('sushiswap')">SushiSwap</div>
-                <div class="menu-item" onclick="openDEX('curve')">Curve</div>
-                <div class="menu-item" onclick="openDEX('1inch')">1inch</div>
+                <a class="menu-item" href="https://app.uniswap.org/" target="_blank" rel="noopener noreferrer">Uniswap</a>
+                <a class="menu-item" href="https://www.sushi.com/swap" target="_blank" rel="noopener noreferrer">SushiSwap</a>
+                <a class="menu-item" href="https://curve.fi/" target="_blank" rel="noopener noreferrer">Curve</a>
+                <a class="menu-item" href="https://app.1inch.io/" target="_blank" rel="noopener noreferrer">1inch</a>
             </div>
         </div>
     </div>
@@ -1036,11 +1065,34 @@
         function showReceiveModal() {
             if (wallet) {
                 document.getElementById('receiveModal').classList.add('active');
+                // Generate real QR code (client-side only)
+                const qrContainer = document.getElementById('qr-code');
+                if (qrContainer) {
+                    qrContainer.innerHTML = '';
+                    try {
+                        new QRCode(qrContainer, {
+                            text: wallet.address,
+                            width: 200,
+                            height: 200,
+                            colorDark: '#000000',
+                            colorLight: '#ffffff',
+                            correctLevel: QRCode.CorrectLevel.M
+                        });
+                    } catch (e) {
+                        qrContainer.textContent = 'QR unavailable';
+                        console.error('QR generation failed', e);
+                    }
+                }
             }
         }
 
         function showSendModal() {
             document.getElementById('sendModal').classList.add('active');
+            // Clear previous fee hint
+            const hint = document.getElementById('send-fee-hint');
+            if (hint) hint.textContent = '';
+            // Pre-warm a fee estimate if amount is prefilled (optional)
+            setTimeout(() => updateSendFeeHint(), 50);
         }
 
         function showBuyModal() {
@@ -1100,20 +1152,6 @@
             }
         }
 
-        async function pasteAddress
-
-        function fallbackCopyText(text) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.setAttribute('readonly', '');
-            textarea.style.position = 'absolute';
-            textarea.style.left = '-9999px';
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-        }
-
         async function pasteAddress() {
             try {
                 if (navigator.clipboard && navigator.clipboard.readText) {
@@ -1133,6 +1171,59 @@
             const price = getEffectivePrice();
             const ethAmount = price ? usdAmount / price : 0;
             document.getElementById('sendAmount').value = ethAmount.toFixed(6);
+            updateSendFeeHint();
+        }
+
+        async function updateSendFeeHint() {
+            const hint = document.getElementById('send-fee-hint');
+            if (!hint || !wallet || !provider) {
+                if (hint) hint.textContent = '';
+                return;
+            }
+            try {
+                const amountEl = document.getElementById('sendAmount');
+                const amount = parseFloat(amountEl.value) || 0;
+                if (amount <= 0) {
+                    hint.textContent = '';
+                    return;
+                }
+                const value = ethers.utils.parseEther(amount.toString());
+                const baseTx = { to: '0x0000000000000000000000000000000000000000', value };
+                const gasLimit = await provider.estimateGas(baseTx);
+                const feeData = await provider.getFeeData();
+                let feeEth = '—';
+                if (feeData.maxFeePerGas) {
+                    const maxFee = gasLimit.mul(feeData.maxFeePerGas);
+                    feeEth = parseFloat(ethers.utils.formatEther(maxFee)).toFixed(6);
+                } else if (feeData.gasPrice) {
+                    const fee = gasLimit.mul(feeData.gasPrice);
+                    feeEth = parseFloat(ethers.utils.formatEther(fee)).toFixed(6);
+                }
+                hint.textContent = `Est. max fee: ~${feeEth} ETH (gas may be lower)`;
+            } catch (e) {
+                hint.textContent = 'Est. fee unavailable (will be calculated on send)';
+            }
+        }
+
+        async function setMaxAmount() {
+            if (!wallet || !provider) {
+                showToast('Connect a wallet first');
+                return;
+            }
+            try {
+                const balance = await provider.getBalance(wallet.address);
+                const ethBal = parseFloat(ethers.utils.formatEther(balance));
+                // Rough buffer for gas (0.001 ETH on L2/mainnet is usually plenty)
+                const buffer = 0.0015;
+                const max = Math.max(0, ethBal - buffer);
+                document.getElementById('sendAmount').value = max.toFixed(6);
+                // also sync USD
+                const price = getEffectivePrice();
+                document.getElementById('sendAmountUSD').value = (max * price).toFixed(2);
+                updateSendFeeHint();
+            } catch (e) {
+                showToast('Could not calculate max');
+            }
         }
 
         async function sendETH() {
@@ -1179,41 +1270,28 @@
                 }
 
                 const transaction = await wallet.sendTransaction(tx);
-                showToast('Transaction sent! Hash: ' + transaction.hash.substring(0, 10) + '...');
+                const shortHash = transaction.hash.substring(0, 10) + '...';
+                showToast('Transaction sent! ' + shortHash);
                 
                 await transaction.wait();
-                showToast('Transaction confirmed!');
+                
+                const explorerBase = activeNetwork === 'sepolia' 
+                    ? 'https://sepolia.etherscan.io/tx/' 
+                    : 'https://etherscan.io/tx/';
+                const explorerLink = explorerBase + transaction.hash;
+                
+                // Show success with link (toast + extra prompt for copy/link)
+                showToast('Transaction confirmed! ✓');
+                setTimeout(() => {
+                    if (confirm('View on Etherscan?')) {
+                        window.open(explorerLink, '_blank', 'noopener,noreferrer');
+                    }
+                }, 800);
                 
                 closeModal('sendModal');
                 await updateBalance();
             } catch (error) {
                 showToast('Transaction failed: ' + error.message);
-            }
-        }
-
-        function openExchange(exchange) {
-            const urls = {
-                coinbase: 'https://www.coinbase.com/buy-ethereum',
-                kraken: 'https://www.kraken.com/prices/ethereum',
-                binance: 'https://www.binance.com/en/buy-sell-crypto',
-                uniswap: 'https://app.uniswap.org/'
-            };
-            if (urls[exchange]) {
-                openSafeExternal(urls[exchange]);
-                showToast('Opening ' + exchange + '...');
-            }
-        }
-
-        function openDEX(dex) {
-            const urls = {
-                uniswap: 'https://app.uniswap.org/',
-                sushiswap: 'https://www.sushi.com/swap',
-                curve: 'https://curve.fi/',
-                '1inch': 'https://app.1inch.io/'
-            };
-            if (urls[dex]) {
-                openSafeExternal(urls[dex]);
-                showToast('Opening ' + dex + '...');
             }
         }
 
@@ -1258,6 +1336,15 @@
 
         updateNetworkBadge();
         startMarketWatcher();
+
+        // PWA Service Worker (best effort)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {
+                    // silent fail is fine for optional offline shell
+                });
+            });
+        }
     </script>
 </body>
 </html>

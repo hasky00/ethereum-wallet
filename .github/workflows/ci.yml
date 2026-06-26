@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, feat/phase-0-* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: npm install
+
+      - name: Run generator tests
+        run: npm test
+
+      - name: Verify HTML is present
+        run: test -f ethereum-wallet.html && echo "HTML present" || exit 1
