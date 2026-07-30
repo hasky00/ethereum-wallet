@@ -269,6 +269,22 @@
             font-size: 13px;
         }
 
+        .custody-note {
+            margin: 18px 0 24px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 245, 255, 0.28);
+            background: rgba(0, 245, 255, 0.08);
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .custody-note strong {
+            color: var(--accent-cyan);
+        }
+
         .action-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -357,6 +373,13 @@
             color: var(--deep-purple);
             font-weight: 700;
             font-size: 14px;
+            padding: 14px;
+        }
+
+        .qr-display svg {
+            width: 100%;
+            height: 100%;
+            display: block;
         }
 
         .modal {
@@ -607,6 +630,10 @@
                     </div>
                 </div>
 
+                <p class="custody-note">
+                    <strong>Self-custodial:</strong> receive, hold, and send ETH from this wallet. Buying ETH is optional funding through an external on-ramp.
+                </p>
+
                 <div class="action-grid">
                     <div class="action-card" onclick="showReceiveModal()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -625,10 +652,8 @@
                 </div>
 
                 <div class="menu-grid">
-                    <div class="menu-item" onclick="showBuyModal()">Buy ETH</div>
-                    <div class="menu-item" onclick="showSwapModal()">Swap</div>
-                    <div class="menu-item" onclick="showMerchantModal()">Merchants</div>
-                    <div class="menu-item" onclick="showATMModal()">ATMs</div>
+                    <div class="menu-item" onclick="buyETH()">Fund Wallet</div>
+                    <div class="menu-item" onclick="showSwapModal()">DEX Swap</div>
                 </div>
 
                 <div style="margin-top:18px; font-size:11px; color:var(--text-muted); text-align:center; opacity:0.85;">
@@ -689,7 +714,7 @@
             </div>
             <p class="info-text">Share your address to receive ETH</p>
             <div class="address-display" id="walletAddress"></div>
-            <div id="qr-code" style="width:200px;height:200px;margin:20px auto;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;"></div>
+            <div class="qr-display" id="qr-code" aria-live="polite"></div>
             <button class="btn btn-primary copy-btn" onclick="copyAddress()">Copy Address</button>
         </div>
     </div>
@@ -722,23 +747,6 @@
         </div>
     </div>
 
-    <!-- Buy Modal -->
-    <div id="buyModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Buy ETH</h2>
-                <button class="close-btn" onclick="closeModal('buyModal')">&times;</button>
-            </div>
-            <p class="info-text">Popular exchanges to buy ETH:</p>
-            <div class="menu-grid" style="margin: 20px 0;">
-                <a class="menu-item" href="https://www.coinbase.com/buy-ethereum" target="_blank" rel="noopener noreferrer">Coinbase</a>
-                <a class="menu-item" href="https://www.kraken.com/prices/ethereum" target="_blank" rel="noopener noreferrer">Kraken</a>
-                <a class="menu-item" href="https://www.binance.com/en/buy-sell-crypto" target="_blank" rel="noopener noreferrer">Binance</a>
-                <a class="menu-item" href="https://app.uniswap.org/" target="_blank" rel="noopener noreferrer">Uniswap</a>
-            </div>
-        </div>
-    </div>
-
     <!-- Swap Modal -->
     <div id="swapModal" class="modal">
         <div class="modal-content">
@@ -753,38 +761,6 @@
                 <a class="menu-item" href="https://curve.fi/" target="_blank" rel="noopener noreferrer">Curve</a>
                 <a class="menu-item" href="https://app.1inch.io/" target="_blank" rel="noopener noreferrer">1inch</a>
             </div>
-        </div>
-    </div>
-
-    <!-- Merchant Modal -->
-    <div id="merchantModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Find Merchants</h2>
-                <button class="close-btn" onclick="closeModal('merchantModal')">&times;</button>
-            </div>
-            <div class="form-group">
-                <label>Enter Location</label>
-                <input type="text" id="merchantLocation" placeholder="City, State or ZIP">
-            </div>
-            <p class="info-text">Find businesses accepting crypto payments</p>
-            <button class="btn btn-primary" onclick="searchMerchants()">Search Nearby</button>
-        </div>
-    </div>
-
-    <!-- ATM Modal -->
-    <div id="atmModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Find Crypto ATMs</h2>
-                <button class="close-btn" onclick="closeModal('atmModal')">&times;</button>
-            </div>
-            <div class="form-group">
-                <label>Enter Location</label>
-                <input type="text" id="atmLocation" placeholder="City, State or ZIP">
-            </div>
-            <p class="info-text">Locate cryptocurrency ATMs near you</p>
-            <button class="btn btn-primary" onclick="searchATMs()">Search Nearby</button>
         </div>
     </div>
 
@@ -814,7 +790,7 @@
             }
         };
 
-        let activeNetwork        let activeNetwork = 'mainnet';
+        let activeNetwork = 'mainnet';
         let ethPriceUSD = 2450.00;
         let wallet = null;
         let provider = null;
@@ -842,7 +818,7 @@
             }
         }
 
-        async function applyNetworkSelection        async function applyNetworkSelection() {
+        async function applyNetworkSelection() {
             const select = document.getElementById('networkSelect');
             if (select && select.value) {
                 activeNetwork = select.value;
@@ -1065,7 +1041,6 @@
         function showReceiveModal() {
             if (wallet) {
                 document.getElementById('receiveModal').classList.add('active');
-                // Generate real QR code (client-side only)
                 const qrContainer = document.getElementById('qr-code');
                 if (qrContainer) {
                     qrContainer.innerHTML = '';
@@ -1095,20 +1070,12 @@
             setTimeout(() => updateSendFeeHint(), 50);
         }
 
-        function showBuyModal() {
-            document.getElementById('buyModal').classList.add('active');
+        function buyETH() {
+            openExchange('coinbase');
         }
 
         function showSwapModal() {
             document.getElementById('swapModal').classList.add('active');
-        }
-
-        function showMerchantModal() {
-            document.getElementById('merchantModal').classList.add('active');
-        }
-
-        function showATMModal() {
-            document.getElementById('atmModal').classList.add('active');
         }
 
         function closeModal(modalId) {
@@ -1295,25 +1262,29 @@
             }
         }
 
-        function searchMerchants() {
-            const location = document.getElementById('merchantLocation').value;
-            if (location) {
-                openSafeExternal('https://coinmap.org/');
-                showToast('Opening merchant map...');
-                closeModal('merchantModal');
-            } else {
-                showToast('Please enter a location');
+        function openExchange(exchange) {
+            const urls = {
+                coinbase: 'https://www.coinbase.com/buy-ethereum',
+                kraken: 'https://www.kraken.com/prices/ethereum',
+                binance: 'https://www.binance.com/en/buy-sell-crypto',
+                uniswap: 'https://app.uniswap.org/'
+            };
+            if (urls[exchange]) {
+                openSafeExternal(urls[exchange]);
+                showToast('Opening ' + exchange + '...');
             }
         }
 
-        function searchATMs() {
-            const location = document.getElementById('atmLocation').value;
-            if (location) {
-                openSafeExternal('https://coinatmradar.com/');
-                showToast('Opening ATM finder...');
-                closeModal('atmModal');
-            } else {
-                showToast('Please enter a location');
+        function openDEX(dex) {
+            const urls = {
+                uniswap: 'https://app.uniswap.org/',
+                sushiswap: 'https://www.sushi.com/swap',
+                curve: 'https://curve.fi/',
+                '1inch': 'https://app.1inch.io/'
+            };
+            if (urls[dex]) {
+                openSafeExternal(urls[dex]);
+                showToast('Opening ' + dex + '...');
             }
         }
 
