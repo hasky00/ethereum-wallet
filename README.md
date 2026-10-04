@@ -101,7 +101,7 @@ ethereum-wallet/
 ✅ Standard derivation paths  
 ✅ Client-side only (no server communication)  
 ✅ No data collection or tracking  
-✅ Open source and auditable  
+✅ Source-available and auditable
 
 ## ⚠️ Security Warnings
 
@@ -352,9 +352,9 @@ Contributions welcome! Please:
 - Comment complex logic
 - Update documentation
 
-## 📄 License
+## 📄 Attribution
 
-MIT License - see LICENSE file for details
+Hasky Labs - see LICENSE file for details
 
 ## ⚡ Roadmap
 

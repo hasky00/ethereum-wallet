@@ -1,4 +1,4 @@
-# 🎉 START HERE - Ethereum Wallet Project
+# 🎉 START HERE - Hasky Labs Ethereum Wallet
 
 Welcome! You have everything you need to deploy a complete Ethereum wallet on GitHub.
 
@@ -25,7 +25,7 @@ Welcome! You have everything you need to deploy a complete Ethereum wallet on Gi
 
 ### 🔒 Policies & Config (4 files)
 - `SECURITY.md` - Security policy
-- `LICENSE` - MIT License
+- `LICENSE` - Hasky Labs License
 - `package.json` - NPM config
 - `.gitignore` - (needs to be created from gitignore file)
 
@@ -205,7 +205,7 @@ ethereum-wallet/
 ├── QUICK_REFERENCE.md         ← Quick ref
 ├── SECURITY.md                ← Security
 ├── CHANGELOG.md               ← Versions
-├── LICENSE                    ← MIT License
+├── LICENSE                    ← Hasky Labs License
 ├── package.json               ← NPM config
 ├── ethereum-wallet.html       ← Main web app
 ├── eth-wallet-production.js   ← CLI tool
@@ -259,7 +259,7 @@ ethereum-wallet/
 ✅ **Beautiful**: Professional UI
 ✅ **Documented**: 6 doc files
 ✅ **Ready**: Deploy in 3 minutes
-✅ **Open**: MIT licensed
+✅ **Attribution**: Hasky Labs
 ✅ **Quality**: Well tested
 ✅ **Modern**: Latest standards
 
@@ -341,6 +341,6 @@ This is a complete, production-ready Ethereum wallet package.
 
 **Version**: 1.0.0
 **Created**: November 2025
-**License**: MIT
+**Attribution**: Hasky Labs
 
 🎯 **START WITH**: [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)

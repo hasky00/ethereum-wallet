@@ -300,9 +300,9 @@ console.log('Balance:', ethers.utils.formatEther(balance), 'ETH');
 
 ---
 
-## License
+## Attribution
 
-This wallet generator uses industry-standard cryptographic libraries and follows Ethereum Foundation best practices.
+This wallet generator is provided by Hasky Labs and uses industry-standard cryptographic libraries.
 
 **Disclaimer**: Use at your own risk. Always verify code before use. Never trust, always verify.
 

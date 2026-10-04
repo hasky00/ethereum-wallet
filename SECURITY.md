@@ -17,7 +17,7 @@ This project handles sensitive cryptocurrency operations. Security is our top pr
 - ✅ Cryptographically secure random generation
 - ✅ Client-side only (no server communication)
 - ✅ No data collection or external API calls
-- ✅ Open source and auditable code
+- ✅ Source-available and auditable code
 - ✅ Production mode hides private keys
 - ✅ Development mode clearly marked
 

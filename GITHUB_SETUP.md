@@ -96,7 +96,7 @@ https://yourusername.github.io/ethereum-wallet
 ```
 ethereum-wallet/
 ├── README.md                      # Main documentation
-├── LICENSE                        # MIT License
+├── LICENSE                        # Hasky Labs License
 ├── SECURITY.md                    # Security policy
 ├── WALLET_DOCUMENTATION.md        # Detailed guide
 ├── .gitignore                     # Git ignore rules
@@ -253,7 +253,7 @@ Add to README.md:
 - Send/Receive ETH
 - Beautiful purple UI
 
-🔓 Open source & self-custodial
+🔓 Source-available & self-custodial
 💜 Your keys, your crypto
 
 Check it out: [link]

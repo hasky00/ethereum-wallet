@@ -29,7 +29,7 @@ This package contains everything you need to deploy a complete Ethereum wallet s
 ### ⚙️ Configuration Files
 - **package.json** - NPM configuration
 - **.gitignore** - Git ignore rules (protects private keys)
-- **LICENSE** - MIT License with crypto disclaimers
+- **LICENSE** - Hasky Labs attribution with crypto disclaimers
 
 ## 🚀 Deploy to GitHub in 3 Steps
 
@@ -96,7 +96,7 @@ git push -u origin main
 | SECURITY.md | 4.5KB | Security policy |
 | CHANGELOG.md | 4.4KB | Version history |
 | eth-wallet-output.json | 3.8KB | Example output |
-| LICENSE | 1.7KB | MIT License |
+| LICENSE | 0.6KB | Hasky Labs License |
 | package.json | 938B | NPM config |
 
 **Total: ~114KB** - Lightweight and fast!
@@ -132,7 +132,7 @@ git push -u origin main
 - ✅ No hardcoded private keys
 - ✅ Production mode hides secrets
 - ✅ Comprehensive security warnings
-- ✅ Open source for audit
+- ✅ Source-available for audit
 
 ## 📊 Technology Stack
 
@@ -210,7 +210,7 @@ See CHANGELOG.md for complete roadmap.
 
 ## 🤝 Contributing
 
-This is open source! Contributions welcome:
+This is source-available. Contributions welcome:
 1. Fork repository
 2. Create feature branch
 3. Make changes
@@ -273,7 +273,7 @@ Before deploying to GitHub:
 - Standards compliant (BIP39/BIP44)
 - Well documented (5 docs)
 - Security focused
-- Open source (MIT)
+- Hasky Labs owned
 
 ### Package Size
 - Total: ~114KB
@@ -342,6 +342,6 @@ Everything you need is included. Follow GITHUB_SETUP.md to deploy.
 
 **Package Version**: 1.0.0
 **Created**: November 2025
-**License**: MIT
+**Attribution**: Hasky Labs
 
 Made with 💜 for the Ethereum community

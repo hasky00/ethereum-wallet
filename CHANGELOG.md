@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Detailed WALLET_DOCUMENTATION.md
   - Security policy (SECURITY.md)
   - GitHub setup guide (GITHUB_SETUP.md)
-  - MIT License
+  - Hasky Labs License
   
 - 🛠️ Development setup
   - package.json for npm dependencies
@@ -59,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keccak-256 hash function
 - 128-bit entropy (12-word seed phrases)
 - No external API calls with sensitive data
-- Open source for community audit
+- Source-available for community audit
 
 ### Technical Details
 - Built with ethers.js v5.7.2
