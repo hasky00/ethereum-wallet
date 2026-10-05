@@ -598,32 +598,6 @@
             color: var(--accent-cyan);
         }
 
-        .layer-tabs {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 18px;
-        }
-
-        .layer-tab {
-            padding: 12px 14px;
-            border: 1px solid rgba(157, 78, 221, 0.35);
-            border-radius: 14px;
-            background: rgba(157, 78, 221, 0.1);
-            color: var(--text-muted);
-            font-weight: 800;
-            cursor: pointer;
-            font-family: 'Outfit', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-        }
-
-        .layer-tab.active {
-            color: var(--text-white);
-            background: linear-gradient(135deg, rgba(109, 48, 195, 0.6), rgba(0, 245, 255, 0.15));
-            border-color: rgba(0, 245, 255, 0.35);
-        }
-
         .layer-kicker {
             color: var(--accent-cyan);
             font-size: 12px;
@@ -632,6 +606,19 @@
             margin-bottom: 8px;
             text-align: center;
             text-transform: uppercase;
+        }
+
+        .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .section-head .layer-kicker {
+            margin-bottom: 0;
+            text-align: left;
         }
 
         .mini-grid {
@@ -841,11 +828,6 @@
             </div>
 
             <div class="card">
-                <div class="layer-tabs">
-                    <button class="layer-tab active" id="walletLayerTab" onclick="showLayer('wallet')">Layer Two</button>
-                    <button class="layer-tab" id="communityLayerTab" onclick="showLayer('community')">Layer Three</button>
-                </div>
-
                 <div class="identity-card hidden" id="nostrIdentityCard">
                     <strong>Nostr linked:</strong> <span id="nostrIdentityValue"></span>
                 </div>
@@ -926,7 +908,10 @@
                 </div>
 
                 <div id="communityLayer" class="hidden">
-                    <div class="layer-kicker">Community</div>
+                    <div class="section-head">
+                        <div class="layer-kicker">Community</div>
+                        <button class="btn btn-secondary copy-btn" onclick="showLayer('wallet')">Wallet Hub</button>
+                    </div>
                     <div class="composer">
                         <div class="form-group">
                             <label>Post to ETH community</label>
@@ -1561,16 +1546,12 @@
         function showLayer(layer) {
             const walletLayer = document.getElementById('walletLayer');
             const communityLayer = document.getElementById('communityLayer');
-            const walletTab = document.getElementById('walletLayerTab');
-            const communityTab = document.getElementById('communityLayerTab');
 
-            if (!walletLayer || !communityLayer || !walletTab || !communityTab) return;
+            if (!walletLayer || !communityLayer) return;
 
             const showingCommunity = layer === 'community';
             walletLayer.classList.toggle('hidden', showingCommunity);
             communityLayer.classList.toggle('hidden', !showingCommunity);
-            walletTab.classList.toggle('active', !showingCommunity);
-            communityTab.classList.toggle('active', showingCommunity);
 
             if (showingCommunity) {
                 renderCommunityFeed();
