@@ -1,18 +1,28 @@
 {
-  "name": "Ethereum Wallet",
+  "name": "Ethereum Wallet by Hasky Labs",
   "short_name": "ETH Wallet",
-  "description": "Secure self-custodial Ethereum wallet. Create, import, send & receive ETH. Testnet ready.",
-  "start_url": "./ethereum-wallet.html",
+  "description": "Self-custodial Ethereum wallet with Nostr identity entry, live ETH markets, and community.",
+  "id": "/ethereum-wallet/",
+  "start_url": "/ethereum-wallet/index.html",
+  "scope": "/ethereum-wallet/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "background_color": "#0d0221",
-  "theme_color": "#1b0938",
+  "theme_color": "#0d0221",
   "orientation": "portrait",
+  "categories": ["finance", "utilities"],
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 417'%3E%3Cpath fill='%236930c3' d='M127.961 0l-2.795 9.5v275.668l2.795 2.79 127.962-75.638z'/%3E%3Cpath fill='%239d4edd' d='M127.962 0L0 212.32l127.962 75.639V154.158z'/%3E%3C/svg%3E",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "assets/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ],
-  "categories": ["finance", "blockchain", "crypto"]
+  ]
 }

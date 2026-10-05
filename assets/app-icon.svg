@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="120" x2="904" y1="64" y2="960" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2b0b57"/>
+      <stop offset="0.52" stop-color="#0d0221"/>
+      <stop offset="1" stop-color="#061a40"/>
+    </linearGradient>
+    <linearGradient id="ethA" x1="302" x2="732" y1="146" y2="835" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00f5ff"/>
+      <stop offset="0.48" stop-color="#9d4edd"/>
+      <stop offset="1" stop-color="#6930c3"/>
+    </linearGradient>
+    <linearGradient id="ethB" x1="310" x2="720" y1="200" y2="824" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f0f0f0"/>
+      <stop offset="1" stop-color="#00f5ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="356" fill="none" stroke="#00f5ff" stroke-opacity="0.2" stroke-width="28"/>
+  <circle cx="512" cy="512" r="268" fill="#1b0938" fill-opacity="0.72" stroke="#9d4edd" stroke-opacity="0.42" stroke-width="12"/>
+  <path fill="url(#ethB)" d="M512 139 306 514l206 122 206-122L512 139Z"/>
+  <path fill="url(#ethA)" d="M512 139v497l206-122L512 139Z"/>
+  <path fill="#00f5ff" fill-opacity="0.72" d="M512 677 306 555l206 330 206-330-206 122Z"/>
+  <path fill="#9d4edd" fill-opacity="0.9" d="M512 677v208l206-330-206 122Z"/>
+</svg>
