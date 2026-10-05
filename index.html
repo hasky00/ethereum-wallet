@@ -267,6 +267,36 @@
             font-size: 13px;
         }
 
+        .market-pairs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .market-pair {
+            padding: 10px 8px;
+            border: 1px solid rgba(157, 78, 221, 0.22);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.18);
+        }
+
+        .pair-label {
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+
+        .pair-value {
+            margin-top: 5px;
+            color: var(--text-white);
+            font-size: 13px;
+            font-weight: 800;
+            word-break: break-word;
+        }
+
         .custody-note {
             margin: 18px 0 24px;
             padding: 14px 16px;
@@ -764,6 +794,152 @@
             line-height: 1.5;
             text-align: center;
         }
+
+        @media (max-width: 430px) {
+            .container {
+                padding: 14px;
+                justify-content: flex-start;
+            }
+
+            .logo {
+                margin-bottom: 24px;
+            }
+
+            .eth-icon {
+                width: 46px;
+                height: 46px;
+                margin-bottom: 10px;
+            }
+
+            .logo h1 {
+                font-size: 28px;
+            }
+
+            .card {
+                padding: 24px 18px;
+                border-radius: 24px;
+            }
+
+            .identity-card {
+                margin-bottom: 14px;
+                padding: 10px 12px;
+                font-size: 11px;
+            }
+
+            .network-row {
+                margin-bottom: 16px;
+            }
+
+            .balance-card {
+                padding: 24px 16px;
+                margin-bottom: 20px;
+                border-radius: 20px;
+            }
+
+            .balance-label {
+                font-size: 11px;
+            }
+
+            .balance-amount {
+                font-size: 42px;
+            }
+
+            .balance-usd {
+                font-size: 16px;
+            }
+
+            .market-card {
+                margin-top: 12px;
+                padding: 14px;
+            }
+
+            .market-price {
+                font-size: 17px;
+            }
+
+            .change {
+                padding: 5px 8px;
+                font-size: 11px;
+            }
+
+            .market-pairs {
+                gap: 6px;
+                margin-top: 12px;
+            }
+
+            .market-pair {
+                padding: 8px 6px;
+            }
+
+            .pair-label {
+                font-size: 9px;
+            }
+
+            .pair-value {
+                font-size: 11px;
+            }
+
+            .market-meta {
+                font-size: 11px;
+            }
+
+            .mini-grid {
+                gap: 8px;
+                margin: 14px 0 16px;
+            }
+
+            .mini-stat {
+                padding: 10px 6px;
+            }
+
+            .mini-stat strong {
+                font-size: 12px;
+            }
+
+            .mini-stat span {
+                font-size: 10px;
+            }
+
+            .custody-note {
+                margin: 14px 0 18px;
+                padding: 12px;
+                font-size: 11px;
+            }
+
+            .action-grid {
+                gap: 10px;
+                margin-bottom: 18px;
+            }
+
+            .action-card {
+                padding: 16px 10px;
+            }
+
+            .action-card svg {
+                width: 28px;
+                height: 28px;
+                margin-bottom: 8px;
+            }
+
+            .menu-grid {
+                gap: 8px;
+                margin-top: 18px;
+            }
+
+            .menu-item {
+                padding: 12px 10px;
+                font-size: 12px;
+            }
+
+            .community-panel {
+                margin-top: 12px;
+            }
+
+            .app-footer {
+                margin-top: 14px;
+                font-size: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -851,10 +1027,24 @@
                     <div class="market-card" aria-live="polite">
                         <div class="market-header">
                             <div>
-                                <div class="balance-label">Live ETH Price</div>
+                                <div class="balance-label">Live ETH Market</div>
                                 <div class="market-price" id="marketPrice">$0.00 USD</div>
                             </div>
                             <div class="change" id="marketChange">0.00% 24h</div>
+                        </div>
+                        <div class="market-pairs">
+                            <div class="market-pair">
+                                <div class="pair-label">ETH/USD</div>
+                                <div class="pair-value" id="ethUsdPair">$0.00</div>
+                            </div>
+                            <div class="market-pair">
+                                <div class="pair-label">ETH/BTC</div>
+                                <div class="pair-value" id="ethBtcPair">0.00000000 BTC</div>
+                            </div>
+                            <div class="market-pair">
+                                <div class="pair-label">ETH/USDT</div>
+                                <div class="pair-value" id="ethUsdtPair">0.00 USDT</div>
+                            </div>
                         </div>
                         <div class="market-meta">
                             <span id="marketStatus">Fetching secure market data...</span>
@@ -1043,7 +1233,7 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        const MARKET_API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true&precision=4';
+        const MARKET_API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=ethereum,tether&vs_currencies=usd,btc&include_24hr_change=true&precision=8';
         const MARKET_REFRESH_MS = 60000;
         const NETWORKS = {
             mainnet: {
@@ -1290,6 +1480,18 @@
             return Number.isFinite(cached) && cached > 0 ? cached : null;
         }
 
+        function formatUsd(value) {
+            return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        function formatUsdt(value) {
+            return `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
+        }
+
+        function formatBtc(value) {
+            return `${value.toFixed(8)} BTC`;
+        }
+
         async function fetchMarketData() {
             try {
                 const response = await fetch(MARKET_API_URL, { cache: 'no-store' });
@@ -1297,38 +1499,49 @@
 
                 const payload = await response.json();
                 const market = payload?.ethereum;
+                const tether = payload?.tether;
 
                 if (!market || typeof market.usd !== 'number') {
                     throw new Error('Malformed market data');
                 }
 
                 const price = market.usd;
+                const btcPrice = typeof market.btc === 'number' ? market.btc : null;
+                const usdtPrice = tether && typeof tether.usd === 'number' && tether.usd > 0
+                    ? price / tether.usd
+                    : price;
                 const change = typeof market.usd_24h_change === 'number' ? market.usd_24h_change : 0;
 
                 ethPriceUSD = price;
                 localStorage.setItem('ethPriceUSD', String(price));
-                updateMarketUI({ price, change, statusLabel: 'Live market data (CoinGecko)' });
+                updateMarketUI({ price, btcPrice, usdtPrice, change, statusLabel: 'Live market data (CoinGecko)' });
             } catch (error) {
                 console.error('Market data fetch failed:', error);
                 const cachedPrice = getCachedPrice();
                 if (cachedPrice) {
                     ethPriceUSD = cachedPrice;
-                    updateMarketUI({ price: cachedPrice, change: 0, statusLabel: 'Live price unavailable (cached)' });
+                    updateMarketUI({ price: cachedPrice, btcPrice: null, usdtPrice: cachedPrice, change: 0, statusLabel: 'Live price unavailable (cached)' });
                 } else {
                     document.getElementById('marketStatus').textContent = 'Live price unavailable';
                 }
             }
         }
 
-        function updateMarketUI({ price, change, statusLabel }) {
+        function updateMarketUI({ price, btcPrice, usdtPrice, change, statusLabel }) {
             const priceEl = document.getElementById('marketPrice');
+            const ethUsdPairEl = document.getElementById('ethUsdPair');
+            const ethBtcPairEl = document.getElementById('ethBtcPair');
+            const ethUsdtPairEl = document.getElementById('ethUsdtPair');
             const changeEl = document.getElementById('marketChange');
             const statusEl = document.getElementById('marketStatus');
             const updatedAtEl = document.getElementById('marketUpdatedAt');
 
             if (!priceEl || !changeEl || !statusEl || !updatedAtEl) return;
 
-            priceEl.textContent = `$${price.toFixed(2)} USD`;
+            priceEl.textContent = `${formatUsd(price)} USD`;
+            if (ethUsdPairEl) ethUsdPairEl.textContent = formatUsd(price);
+            if (ethBtcPairEl) ethBtcPairEl.textContent = Number.isFinite(btcPrice) ? formatBtc(btcPrice) : '-- BTC';
+            if (ethUsdtPairEl) ethUsdtPairEl.textContent = Number.isFinite(usdtPrice) ? formatUsdt(usdtPrice) : '-- USDT';
             const roundedChange = change.toFixed(2);
             changeEl.textContent = `${roundedChange}% 24h`;
             changeEl.className = `change ${change >= 0 ? 'positive' : 'negative'}`;
