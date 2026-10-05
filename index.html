@@ -632,7 +632,7 @@
                     </div>
                     <button class="btn btn-primary" onclick="createWalletFromNostr()">Continue with Nostr</button>
                     <p class="nostr-note">
-                        nsec opens a spendable wallet from your Nostr secret. npub links a fresh wallet to your public Nostr identity.
+                        nsec proves your Nostr identity locally. ETH keys stay separate in a fresh wallet.
                     </p>
                 </div>
 
@@ -883,6 +883,22 @@
             return result;
         }
 
+        function bech32CreateChecksum(hrp, words) {
+            const values = bech32HrpExpand(hrp).concat(words);
+            const polymod = bech32Polymod(values.concat([0, 0, 0, 0, 0, 0])) ^ 1;
+            const checksum = [];
+            for (let i = 0; i < 6; i += 1) {
+                checksum.push((polymod >> (5 * (5 - i))) & 31);
+            }
+            return checksum;
+        }
+
+        function encodeBech32(hrp, bytes) {
+            const words = convertBits(bytes, 8, 5, true);
+            const combined = words.concat(bech32CreateChecksum(hrp, words));
+            return hrp + '1' + combined.map((word) => BECH32_CHARSET[word]).join('');
+        }
+
         function decodeBech32(value) {
             const input = value.trim();
             if (input !== input.toLowerCase() && input !== input.toUpperCase()) {
@@ -945,6 +961,36 @@
 
         function bytesToHex(bytes) {
             return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+        }
+
+        function hexToBytes(hex) {
+            const clean = hex.replace(/^0x/, '');
+            const bytes = [];
+            for (let i = 0; i < clean.length; i += 2) {
+                bytes.push(parseInt(clean.slice(i, i + 2), 16));
+            }
+            return bytes;
+        }
+
+        function deriveNpubFromNsecBytes(bytes) {
+            const privateKey = '0x' + bytesToHex(bytes);
+            const publicKey = ethers.utils.computePublicKey(privateKey, false);
+            const xOnlyPublicKey = publicKey.slice(4, 68);
+            return encodeBech32('npub', hexToBytes(xOnlyPublicKey));
+        }
+
+        function getNostrIdentity(nostrKey) {
+            if (nostrKey.type === 'npub') {
+                return {
+                    type: 'npub',
+                    value: nostrKey.value
+                };
+            }
+
+            return {
+                type: 'npub',
+                value: deriveNpubFromNsecBytes(nostrKey.bytes)
+            };
         }
 
         function shortKey(value) {
@@ -1118,24 +1164,12 @@
                 }
 
                 const nostrKey = decodeNostrKey(input);
-                nostrIdentity = {
-                    type: nostrKey.type,
-                    value: nostrKey.value
-                };
-
-                if (nostrKey.type === 'nsec') {
-                    wallet = new ethers.Wallet('0x' + bytesToHex(nostrKey.bytes));
-                    document.getElementById('nostrKeyInput').value = '';
-                    showToast('Wallet created from nsec');
-                    await connectWallet();
-                    return;
-                }
-
+                nostrIdentity = getNostrIdentity(nostrKey);
                 pendingWallet = ethers.Wallet.createRandom();
                 pendingMnemonic = pendingWallet.mnemonic.phrase;
                 document.getElementById('nostrKeyInput').value = '';
                 showSeedModal(pendingMnemonic);
-                showToast('Fresh wallet linked to npub');
+                showToast('Fresh ETH wallet linked to Nostr');
             } catch (error) {
                 console.error('Nostr wallet error:', error);
                 showToast(error.message || 'Invalid Nostr key');
@@ -1165,11 +1199,14 @@
                     nostrIdentity = null;
                 } else if (input.toLowerCase().startsWith('nsec1')) {
                     const nostrKey = decodeNostrKey(input);
-                    wallet = new ethers.Wallet('0x' + bytesToHex(nostrKey.bytes));
-                    nostrIdentity = {
-                        type: nostrKey.type,
-                        value: nostrKey.value
-                    };
+                    nostrIdentity = getNostrIdentity(nostrKey);
+                    pendingWallet = ethers.Wallet.createRandom();
+                    pendingMnemonic = pendingWallet.mnemonic.phrase;
+                    closeModal('importModal');
+                    document.getElementById('importKey').value = '';
+                    showSeedModal(pendingMnemonic);
+                    showToast('Fresh ETH wallet linked to Nostr');
+                    return;
                 } else {
                     if (!input.startsWith('0x')) {
                         input = '0x' + input;
