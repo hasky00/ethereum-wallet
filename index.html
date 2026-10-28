@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://api.coingecko.com https://cloudflare-eth.com https://rpc.sepolia.org https://rpc.ankr.com https://ethereum.publicnode.com https://ethereum-sepolia.publicnode.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://api.coingecko.com https://thornode.ninerealms.com https://midgard.ninerealms.com https://cloudflare-eth.com https://rpc.sepolia.org https://rpc.ankr.com https://ethereum.publicnode.com https://ethereum-sepolia.publicnode.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
     <title>Ethereum Wallet</title>
     <meta name="application-name" content="ETH Wallet">
     <meta name="theme-color" content="#0d0221">
@@ -1240,6 +1240,42 @@
         </div>
     </div>
 
+    <!-- Bitcoin Top-up Modal (THORChain BTC -> ETH) -->
+    <div id="btcModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Top up with Bitcoin</h2>
+                <button class="close-btn" onclick="closeModal('btcModal')">&times;</button>
+            </div>
+
+            <div id="btcStepAmount">
+                <p class="info-text">Send Bitcoin, receive ETH in this wallet. Swapped on-chain by THORChain, no account needed.</p>
+                <div class="form-group">
+                    <label>Amount (BTC)</label>
+                    <input type="number" id="btcAmount" placeholder="0.001" step="0.00001" min="0">
+                </div>
+                <p class="info-text" id="btcMinHint" style="font-size: 12px;"></p>
+                <button class="btn btn-primary" id="btcQuoteBtn" onclick="getBtcQuote()">Get quote</button>
+            </div>
+
+            <div id="btcStepPay" style="display: none;">
+                <p class="info-text">You receive about <strong id="btcExpectedOut">--</strong> ETH. Quote valid for <span id="btcExpiry">--</span>.</p>
+                <p class="info-text" style="font-size: 12px;">Send exactly <strong id="btcSendAmount">--</strong> BTC to this address <strong>with the memo</strong>. Most Bitcoin wallets have a memo / OP_RETURN field; without the memo THORChain cannot route your swap.</p>
+                <div class="qr-display" id="btc-qr" aria-live="polite"></div>
+                <label style="font-size: 12px; opacity: .7;">Bitcoin address</label>
+                <div class="address-display" id="btcInboundAddress"></div>
+                <label style="font-size: 12px; opacity: .7;">Memo</label>
+                <div class="address-display" id="btcMemo"></div>
+                <div class="seed-actions" style="margin-top: 14px;">
+                    <button class="btn btn-secondary" onclick="copyText(document.getElementById('btcInboundAddress').textContent, 'Address copied')">Copy address</button>
+                    <button class="btn btn-primary" onclick="copyText(document.getElementById('btcMemo').textContent, 'Memo copied')">Copy memo</button>
+                </div>
+                <p class="info-text" id="btcStatus" style="font-size: 12px; margin-top: 14px;">Waiting for your Bitcoin. ETH usually arrives 10 to 30 minutes after you send.</p>
+                <button class="btn btn-secondary" onclick="resetBtcTopup()" style="margin-top: 10px;">Start over</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Send Modal -->
     <div id="sendModal" class="modal">
         <div class="modal-content">
@@ -1284,6 +1320,10 @@
                 <div class="buy-method" onclick="buyWith('paypal')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7.5a4.5 4.5 0 0 1 0 9H10l-1 6H5.5L7 3z"/><path d="M10 12h3.5a4.5 4.5 0 0 1 0 9H10l-.5 0"/></svg>
                     <div>PayPal<small>Where MoonPay supports it</small></div>
+                </div>
+                <div class="buy-method" onclick="showBtcTopupModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 7h4.5a2.5 2.5 0 0 1 0 5H9m0 0h5a2.5 2.5 0 0 1 0 5H9M9 7v10M11 5v2M11 17v2"/></svg>
+                    <div>Bitcoin<small>Pay in BTC, receive ETH via THORChain</small></div>
                 </div>
             </div>
             <p class="info-text" style="font-size: 12px;">Powered by MoonPay. Your address is copied automatically so you can paste it in the checkout.</p>
@@ -2032,6 +2072,172 @@
             closeModal('buyModal');
             openSafeExternal(MOONPAY_BASE_URL + '?' + params.toString());
             showToast('Address copied. Paste it in MoonPay if asked.');
+        }
+
+        // THORChain BTC -> ETH top-up.
+        // THOR_AFFILIATE is your THORName (register one on-chain, then put it here).
+        // THOR_AFFILIATE_BPS is your cut in basis points: 50 = 0.5%. Paid by THORChain to the THORName owner.
+        const THORNODE_URL = 'https://thornode.ninerealms.com';
+        const MIDGARD_URL = 'https://midgard.ninerealms.com';
+        const THOR_AFFILIATE = '';
+        const THOR_AFFILIATE_BPS = 50;
+        let btcQuote = null;
+        let btcPollTimer = null;
+
+        function showBtcTopupModal() {
+            if (!wallet || !wallet.address) {
+                showToast('Create or import a wallet first');
+                return;
+            }
+            closeModal('buyModal');
+            resetBtcTopup();
+            document.getElementById('btcModal').classList.add('active');
+            loadBtcMinHint();
+        }
+
+        function resetBtcTopup() {
+            btcQuote = null;
+            if (btcPollTimer) { clearInterval(btcPollTimer); btcPollTimer = null; }
+            document.getElementById('btcStepAmount').style.display = 'block';
+            document.getElementById('btcStepPay').style.display = 'none';
+            document.getElementById('btc-qr').innerHTML = '';
+        }
+
+        // THORChain uses 1e8 base units for every asset.
+        function toE8(amountStr) {
+            return BigInt(Math.round(parseFloat(amountStr) * 1e8));
+        }
+        function fromE8(e8Str, decimals = 6) {
+            return (Number(BigInt(e8Str)) / 1e8).toFixed(decimals);
+        }
+
+        function thorQuoteUrl(amountE8) {
+            const params = new URLSearchParams({
+                from_asset: 'BTC.BTC',
+                to_asset: 'ETH.ETH',
+                amount: amountE8.toString(),
+                destination: wallet.address
+            });
+            if (THOR_AFFILIATE) {
+                params.set('affiliate', THOR_AFFILIATE);
+                params.set('affiliate_bps', String(THOR_AFFILIATE_BPS));
+            }
+            return THORNODE_URL + '/thorchain/quote/swap?' + params.toString();
+        }
+
+        async function loadBtcMinHint() {
+            const hint = document.getElementById('btcMinHint');
+            hint.textContent = 'Checking minimum amount...';
+            try {
+                const res = await fetch(thorQuoteUrl(1000000n)); // 0.01 BTC probe
+                const data = await res.json();
+                if (data.recommended_min_amount_in) {
+                    hint.textContent = 'Minimum recommended: ' + fromE8(data.recommended_min_amount_in, 5) + ' BTC. Below that, network fees eat most of the swap.';
+                } else {
+                    hint.textContent = '';
+                }
+            } catch (err) {
+                hint.textContent = 'Could not reach THORChain right now. Try again in a moment.';
+            }
+        }
+
+        async function getBtcQuote() {
+            const amountStr = document.getElementById('btcAmount').value;
+            if (!amountStr || parseFloat(amountStr) <= 0) {
+                showToast('Enter a BTC amount');
+                return;
+            }
+            const btn = document.getElementById('btcQuoteBtn');
+            btn.disabled = true;
+            btn.textContent = 'Getting quote...';
+            try {
+                const res = await fetch(thorQuoteUrl(toE8(amountStr)));
+                const data = await res.json();
+                if (!res.ok || data.error) {
+                    throw new Error(data.error || 'Quote failed');
+                }
+                if (!data.inbound_address || !data.memo) {
+                    throw new Error('THORChain returned no deposit address');
+                }
+                btcQuote = data;
+                showBtcPayStep(amountStr, data);
+            } catch (err) {
+                showToast('THORChain: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Get quote';
+            }
+        }
+
+        function showBtcPayStep(amountStr, q) {
+            document.getElementById('btcStepAmount').style.display = 'none';
+            document.getElementById('btcStepPay').style.display = 'block';
+            document.getElementById('btcExpectedOut').textContent = fromE8(q.expected_amount_out);
+            document.getElementById('btcSendAmount').textContent = parseFloat(amountStr).toFixed(8).replace(/0+$/, '').replace(/\.$/, '');
+            document.getElementById('btcInboundAddress').textContent = q.inbound_address;
+            document.getElementById('btcMemo').textContent = q.memo;
+
+            if (q.expiry) {
+                const mins = Math.max(1, Math.round((q.expiry * 1000 - Date.now()) / 60000));
+                document.getElementById('btcExpiry').textContent = mins + ' min';
+            } else {
+                document.getElementById('btcExpiry').textContent = 'a few minutes';
+            }
+
+            // BIP-21 URI so wallets that support it pre-fill the amount. Memo still has to be entered by hand in most wallets.
+            const uri = 'bitcoin:' + q.inbound_address + '?amount=' + parseFloat(amountStr).toFixed(8);
+            const qr = document.getElementById('btc-qr');
+            qr.innerHTML = '';
+            try {
+                new QRCode(qr, { text: uri, width: 200, height: 200, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+            } catch (e) {
+                qr.textContent = 'QR unavailable';
+            }
+
+            startBtcPolling();
+        }
+
+        // Watch Midgard for a completed BTC -> ETH swap that paid out to this wallet.
+        function startBtcPolling() {
+            if (btcPollTimer) clearInterval(btcPollTimer);
+            const startedAt = Math.floor(Date.now() / 1000);
+            const status = document.getElementById('btcStatus');
+            btcPollTimer = setInterval(async () => {
+                try {
+                    const res = await fetch(MIDGARD_URL + '/v2/actions?address=' + wallet.address + '&type=swap&limit=5&offset=0');
+                    const data = await res.json();
+                    const actions = data.actions || [];
+                    for (const a of actions) {
+                        const ts = Math.floor(Number(a.date) / 1e9);
+                        if (ts < startedAt - 120) continue;
+                        if (a.status === 'pending') {
+                            status.textContent = 'Bitcoin seen. THORChain is swapping, ETH is on its way.';
+                        } else if (a.status === 'success') {
+                            status.textContent = 'ETH arrived in your wallet.';
+                            showToast('Bitcoin top-up complete');
+                            clearInterval(btcPollTimer);
+                            btcPollTimer = null;
+                            if (typeof updateBalance === 'function') updateBalance();
+                            return;
+                        }
+                    }
+                } catch (err) {
+                    // network hiccup, keep polling
+                }
+            }, 30000);
+        }
+
+        async function copyText(text, toastMsg) {
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    fallbackCopyText(text);
+                }
+                showToast(toastMsg || 'Copied');
+            } catch (err) {
+                showToast('Copy failed');
+            }
         }
 
         function closeModal(modalId) {
