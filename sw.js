@@ -1,7 +1,7 @@
 // Minimal Service Worker for Ethereum Wallet PWA.
 // Caches the app shell, native app icons, vendor files, and recent price data.
 
-const CACHE_NAME = 'eth-wallet-v2';
+const CACHE_NAME = 'eth-wallet-v3';
 const SHELL_FILES = [
   './',
   './index.html',
@@ -33,7 +33,22 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Cache-first for our shell and vendor
+  // Network-first for the page itself so updates show up on the next load; cache only when offline
+  const isPage = event.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/');
+  if (isPage) {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
+          return res;
+        })
+        .catch(() => caches.match(event.request).then((c) => c || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Cache-first for icons and vendor libraries (they only change with a cache name bump)
   if (SHELL_FILES.some((f) => url.pathname.endsWith(f.replace('./', '')) || url.pathname === f)) {
     event.respondWith(
       caches.match(event.request).then((cached) => cached || fetch(event.request))
