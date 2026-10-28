@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://api.coingecko.com https://thornode.ninerealms.com https://midgard.ninerealms.com https://thornode.thorswap.net https://midgard.thorswap.net https://thornode.thorchain.liquify.com https://midgard.thorchain.liquify.com https://cloudflare-eth.com https://rpc.sepolia.org https://rpc.ankr.com https://ethereum.publicnode.com https://ethereum-sepolia.publicnode.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://api.coingecko.com https://gateway.liquify.com https://thornode.thorswap.net https://midgard.thorswap.net https://cloudflare-eth.com https://rpc.sepolia.org https://rpc.ankr.com https://ethereum.publicnode.com https://ethereum-sepolia.publicnode.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
     <title>Ethereum Wallet</title>
     <meta name="application-name" content="ETH Wallet">
     <meta name="theme-color" content="#0d0221">
@@ -2079,14 +2079,12 @@
         // THOR_AFFILIATE_BPS is your cut in basis points: 50 = 0.5%. Paid by THORChain to the THORName owner.
         // Public nodes, tried in order until one answers.
         const THORNODE_URLS = [
-            'https://thornode.ninerealms.com',
-            'https://thornode.thorswap.net',
-            'https://thornode.thorchain.liquify.com'
+            'https://gateway.liquify.com/chain/thorchain_api',
+            'https://thornode.thorswap.net'
         ];
         const MIDGARD_URLS = [
-            'https://midgard.ninerealms.com',
-            'https://midgard.thorswap.net',
-            'https://midgard.thorchain.liquify.com'
+            'https://gateway.liquify.com/chain/thorchain_midgard',
+            'https://midgard.thorswap.net'
         ];
 
         // fetch JSON from the first host that responds; path starts with '/'
