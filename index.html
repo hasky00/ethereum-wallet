@@ -329,9 +329,46 @@
 
         .action-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 16px;
             margin-bottom: 30px;
+        }
+
+        .buy-methods {
+            display: grid;
+            gap: 12px;
+        }
+
+        .buy-method {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            background: rgba(157, 78, 221, 0.1);
+            border: 1px solid rgba(157, 78, 221, 0.3);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .buy-method:hover {
+            background: rgba(157, 78, 221, 0.2);
+            border-color: var(--vibrant-purple);
+        }
+
+        .buy-method svg {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+
+        .buy-method small {
+            display: block;
+            font-weight: 400;
+            font-size: 12px;
+            opacity: 0.7;
         }
 
         .action-card {
@@ -1073,7 +1110,7 @@
                     </div>
 
                     <p class="custody-note">
-                        <strong>Self-custodial:</strong> send, receive, transfer, buy, and sell ETH. Buy and sell open trusted third-party ramps.
+                        <strong>Self-custodial:</strong> your keys never leave this device. Buy pays with Apple Pay, Google Pay or PayPal and ETH lands straight in your wallet.
                     </p>
 
                     <div class="action-grid">
@@ -1091,13 +1128,13 @@
                             </svg>
                             <div class="label">Receive</div>
                         </div>
-                    </div>
-
-                    <div class="menu-grid">
-                        <div class="menu-item" onclick="buyETH()">Buy ETH</div>
-                        <div class="menu-item" onclick="sellETH()">Sell ETH</div>
-                        <div class="menu-item" onclick="showSendModal()">Transfer</div>
-                        <div class="menu-item" onclick="showSwapModal()">DEX Swap</div>
+                        <div class="action-card" onclick="showBuyModal()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <div class="label">Buy</div>
+                        </div>
                     </div>
 
                     <div class="market-card community-panel">
@@ -1227,20 +1264,29 @@
         </div>
     </div>
 
-    <!-- Swap Modal -->
-    <div id="swapModal" class="modal">
+    <!-- Buy Modal -->
+    <div id="buyModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Swap Tokens</h2>
-                <button class="close-btn" onclick="closeModal('swapModal')">&times;</button>
+                <h2>Buy ETH</h2>
+                <button class="close-btn" onclick="closeModal('buyModal')">&times;</button>
             </div>
-            <p class="info-text">Use decentralized exchanges:</p>
-            <div class="menu-grid" style="margin: 20px 0;">
-                <div class="menu-item" onclick="openDEX('uniswap')">Uniswap</div>
-                <div class="menu-item" onclick="openDEX('sushiswap')">SushiSwap</div>
-                <div class="menu-item" onclick="openDEX('curve')">Curve</div>
-                <div class="menu-item" onclick="openDEX('1inch')">1inch</div>
+            <p class="info-text">Pick how you want to pay. ETH is delivered to this wallet's address.</p>
+            <div class="buy-methods" style="margin: 20px 0;">
+                <div class="buy-method" onclick="buyWith('apple_pay')">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.8-3.5.8-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.8 3-.8s1.8.8 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.7 0 0-2.5-1-2.5-3.5zM14.1 5.8c.6-.8 1.1-1.9.9-3-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1.1.1 2.1-.5 2.8-1.3z"/></svg>
+                    <div>Apple Pay<small>iPhone, iPad and Mac</small></div>
+                </div>
+                <div class="buy-method" onclick="buyWith('google_pay')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="3"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+                    <div>Google Pay<small>Android and Chrome</small></div>
+                </div>
+                <div class="buy-method" onclick="buyWith('paypal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7.5a4.5 4.5 0 0 1 0 9H10l-1 6H5.5L7 3z"/><path d="M10 12h3.5a4.5 4.5 0 0 1 0 9H10l-.5 0"/></svg>
+                    <div>PayPal<small>Where MoonPay supports it</small></div>
+                </div>
             </div>
+            <p class="info-text" style="font-size: 12px;">Powered by MoonPay. Your address is copied automatically so you can paste it in the checkout.</p>
         </div>
     </div>
 
@@ -1942,16 +1988,50 @@
             document.getElementById('sendModal').classList.add('active');
         }
 
-        function buyETH() {
-            openExchange('coinbase');
+        // MoonPay on-ramp. Add your publishable key (pk_live_... / pk_test_...) once you have one;
+        // leave empty and MoonPay still works, just without attribution to this app.
+        const MOONPAY_API_KEY = '';
+        const MOONPAY_BASE_URL = 'https://buy.moonpay.com/';
+
+        function showBuyModal() {
+            if (!wallet || !wallet.address) {
+                showToast('Create or import a wallet first');
+                return;
+            }
+            document.getElementById('buyModal').classList.add('active');
         }
 
-        function sellETH() {
-            openExchange('coinbaseSell');
-        }
+        async function buyWith(paymentMethod) {
+            if (!wallet || !wallet.address) {
+                showToast('Create or import a wallet first');
+                return;
+            }
 
-        function showSwapModal() {
-            document.getElementById('swapModal').classList.add('active');
+            const params = new URLSearchParams({
+                currencyCode: 'eth',
+                paymentMethod: paymentMethod,
+                walletAddress: wallet.address,
+                theme: 'dark'
+            });
+            if (MOONPAY_API_KEY) {
+                params.set('apiKey', MOONPAY_API_KEY);
+            }
+
+            // Copy the address too: MoonPay only pre-fills it from a signed link,
+            // so the user may need to paste it in the checkout.
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(wallet.address);
+                } else {
+                    fallbackCopyText(wallet.address);
+                }
+            } catch (err) {
+                // clipboard is a nice-to-have
+            }
+
+            closeModal('buyModal');
+            openSafeExternal(MOONPAY_BASE_URL + '?' + params.toString());
+            showToast('Address copied. Paste it in MoonPay if asked.');
         }
 
         function closeModal(modalId) {
@@ -2069,34 +2149,6 @@
                 await updateBalance();
             } catch (error) {
                 showToast('Transaction failed: ' + error.message);
-            }
-        }
-
-        function openExchange(exchange) {
-            const urls = {
-                coinbase: 'https://www.coinbase.com/buy-ethereum',
-                coinbaseSell: 'https://www.coinbase.com/',
-                kraken: 'https://www.kraken.com/prices/ethereum',
-                binance: 'https://www.binance.com/en/buy-sell-crypto',
-                uniswap: 'https://app.uniswap.org/'
-            };
-            if (urls[exchange]) {
-                openSafeExternal(urls[exchange]);
-                const label = exchange === 'coinbaseSell' ? 'coinbase' : exchange;
-                showToast('Opening ' + label + '...');
-            }
-        }
-
-        function openDEX(dex) {
-            const urls = {
-                uniswap: 'https://app.uniswap.org/',
-                sushiswap: 'https://www.sushi.com/swap',
-                curve: 'https://curve.fi/',
-                '1inch': 'https://app.1inch.io/'
-            };
-            if (urls[dex]) {
-                openSafeExternal(urls[dex]);
-                showToast('Opening ' + dex + '...');
             }
         }
 
