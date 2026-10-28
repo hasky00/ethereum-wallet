@@ -1,10 +1,11 @@
 // Minimal Service Worker for Ethereum Wallet PWA.
 // Caches the app shell, native app icons, vendor files, and recent price data.
 
-const CACHE_NAME = 'eth-wallet-v4';
+const CACHE_NAME = 'eth-wallet-v5';
 const SHELL_FILES = [
   './',
   './index.html',
+  './app.js',
   './manifest.json',
   './assets/app-icon.svg',
   './assets/app-icon-192.png',
