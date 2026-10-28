@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://api.coingecko.com https://thornode.ninerealms.com https://midgard.ninerealms.com https://cloudflare-eth.com https://rpc.sepolia.org https://rpc.ankr.com https://ethereum.publicnode.com https://ethereum-sepolia.publicnode.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://api.coingecko.com https://thornode.ninerealms.com https://midgard.ninerealms.com https://thornode.thorswap.net https://midgard.thorswap.net https://thornode.thorchain.liquify.com https://midgard.thorchain.liquify.com https://cloudflare-eth.com https://rpc.sepolia.org https://rpc.ankr.com https://ethereum.publicnode.com https://ethereum-sepolia.publicnode.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
     <title>Ethereum Wallet</title>
     <meta name="application-name" content="ETH Wallet">
     <meta name="theme-color" content="#0d0221">
@@ -2077,8 +2077,32 @@
         // THORChain BTC -> ETH top-up.
         // THOR_AFFILIATE is your THORName (register one on-chain, then put it here).
         // THOR_AFFILIATE_BPS is your cut in basis points: 50 = 0.5%. Paid by THORChain to the THORName owner.
-        const THORNODE_URL = 'https://thornode.ninerealms.com';
-        const MIDGARD_URL = 'https://midgard.ninerealms.com';
+        // Public nodes, tried in order until one answers.
+        const THORNODE_URLS = [
+            'https://thornode.ninerealms.com',
+            'https://thornode.thorswap.net',
+            'https://thornode.thorchain.liquify.com'
+        ];
+        const MIDGARD_URLS = [
+            'https://midgard.ninerealms.com',
+            'https://midgard.thorswap.net',
+            'https://midgard.thorchain.liquify.com'
+        ];
+
+        // fetch JSON from the first host that responds; path starts with '/'
+        async function thorFetch(hosts, path) {
+            let lastErr = null;
+            for (const host of hosts) {
+                try {
+                    const res = await fetch(host + path, { cache: 'no-store' });
+                    const data = await res.json();
+                    return { res, data, host };
+                } catch (err) {
+                    lastErr = err;
+                }
+            }
+            throw lastErr || new Error('No THORChain node reachable');
+        }
         const THOR_AFFILIATE = '';
         const THOR_AFFILIATE_BPS = 50;
         let btcQuote = null;
@@ -2111,7 +2135,7 @@
             return (Number(BigInt(e8Str)) / 1e8).toFixed(decimals);
         }
 
-        function thorQuoteUrl(amountE8) {
+        function thorQuotePath(amountE8) {
             const params = new URLSearchParams({
                 from_asset: 'BTC.BTC',
                 to_asset: 'ETH.ETH',
@@ -2122,15 +2146,14 @@
                 params.set('affiliate', THOR_AFFILIATE);
                 params.set('affiliate_bps', String(THOR_AFFILIATE_BPS));
             }
-            return THORNODE_URL + '/thorchain/quote/swap?' + params.toString();
+            return '/thorchain/quote/swap?' + params.toString();
         }
 
         async function loadBtcMinHint() {
             const hint = document.getElementById('btcMinHint');
             hint.textContent = 'Checking minimum amount...';
             try {
-                const res = await fetch(thorQuoteUrl(1000000n)); // 0.01 BTC probe
-                const data = await res.json();
+                const { data } = await thorFetch(THORNODE_URLS, thorQuotePath(1000000n)); // 0.01 BTC probe
                 if (data.recommended_min_amount_in) {
                     hint.textContent = 'Minimum recommended: ' + fromE8(data.recommended_min_amount_in, 5) + ' BTC. Below that, network fees eat most of the swap.';
                 } else {
@@ -2151,8 +2174,7 @@
             btn.disabled = true;
             btn.textContent = 'Getting quote...';
             try {
-                const res = await fetch(thorQuoteUrl(toE8(amountStr)));
-                const data = await res.json();
+                const { res, data } = await thorFetch(THORNODE_URLS, thorQuotePath(toE8(amountStr)));
                 if (!res.ok || data.error) {
                     throw new Error(data.error || 'Quote failed');
                 }
@@ -2204,8 +2226,7 @@
             const status = document.getElementById('btcStatus');
             btcPollTimer = setInterval(async () => {
                 try {
-                    const res = await fetch(MIDGARD_URL + '/v2/actions?address=' + wallet.address + '&type=swap&limit=5&offset=0');
-                    const data = await res.json();
+                    const { data } = await thorFetch(MIDGARD_URLS, '/v2/actions?address=' + wallet.address + '&type=swap&limit=5&offset=0');
                     const actions = data.actions || [];
                     for (const a of actions) {
                         const ts = Math.floor(Number(a.date) / 1e9);

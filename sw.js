@@ -1,7 +1,7 @@
 // Minimal Service Worker for Ethereum Wallet PWA.
 // Caches the app shell, native app icons, vendor files, and recent price data.
 
-const CACHE_NAME = 'eth-wallet-v3';
+const CACHE_NAME = 'eth-wallet-v4';
 const SHELL_FILES = [
   './',
   './index.html',
@@ -32,6 +32,11 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // Leave cross-origin API calls (THORChain, RPCs, etc.) alone; the page handles its own errors.
+  if (url.origin !== self.location.origin && !url.hostname.includes('coingecko.com')) {
+    return;
+  }
 
   // Network-first for the page itself so updates show up on the next load; cache only when offline
   const isPage = event.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/');
@@ -70,8 +75,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Default: try network, fallback to cache for same-origin
+  // Default: try network, fallback to cache for same-origin; never resolve with undefined
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request).catch(() =>
+      caches.match(event.request).then((c) => c || Response.error())
+    )
   );
 });
