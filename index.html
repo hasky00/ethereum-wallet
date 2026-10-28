@@ -1011,7 +1011,21 @@
                 <h1>Ethereum Wallet</h1>
             </div>
 
-            <div class="card">
+            <div class="card hidden" id="unlockPanel">
+                <div class="landing-title">
+                    <p>Welcome back. Enter your PIN to unlock the wallet saved on this device.</p>
+                </div>
+                <div class="form-group">
+                    <label>PIN</label>
+                    <input type="password" id="unlockPin" inputmode="numeric" autocomplete="current-password" placeholder="Your PIN" onkeydown="if(event.key==='Enter')unlockWallet()">
+                </div>
+                <button class="btn btn-primary" onclick="unlockWallet()">Unlock</button>
+                <p class="info-text" style="text-align: center; margin-top: 14px;">
+                    <a href="#" onclick="forgetWallet(); return false;" style="color: inherit; opacity: .7;">Forget this wallet on this device</a>
+                </p>
+            </div>
+
+            <div class="card" id="createPanel">
                 <div class="landing-title">
                     <div class="nostr-chip-row">
                         <span class="nostr-chip">npub</span>
@@ -1196,7 +1210,7 @@
             </div>
             <div class="form-group">
                 <label>Private Key, Seed Phrase, or nsec</label>
-                <textarea id="importKey" placeholder="Enter your private key, 12/24 word seed phrase, or nsec1..."></textarea>
+                <textarea id="importKey" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Enter your private key, 12/24 word seed phrase, or nsec1..."></textarea>
             </div>
             <p class="info-text">
                 ⚠️ Never share your private key or seed phrase. We don't store this information.
@@ -1219,12 +1233,36 @@
             <div class="seed-phrase" id="seedPhraseDisplay">Loading...</div>
             <div class="form-group seed-confirm">
                 <label>Confirm Seed Phrase</label>
-                <textarea id="seedPhraseConfirm" placeholder="Re-enter your seed phrase to continue"></textarea>
+                <textarea id="seedPhraseConfirm" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Re-enter your seed phrase to continue"></textarea>
             </div>
             <div class="seed-actions">
                 <button class="btn btn-secondary" onclick="cancelSeedPhrase()">Cancel</button>
                 <button class="btn btn-primary" onclick="confirmSeedPhrase()">I Wrote It Down</button>
             </div>
+        </div>
+    </div>
+
+    <!-- PIN Setup Modal -->
+    <div id="pinModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Set a PIN</h2>
+                <button class="close-btn" onclick="skipPin()">&times;</button>
+            </div>
+            <p class="info-text">Your wallet will be saved on this device, encrypted with this PIN. Next time you open the app you unlock with the PIN instead of the seed phrase.</p>
+            <div class="form-group">
+                <label>PIN (at least 6 characters)</label>
+                <input type="password" id="pinSet" inputmode="numeric" autocomplete="new-password" placeholder="Choose a PIN">
+            </div>
+            <div class="form-group">
+                <label>Repeat PIN</label>
+                <input type="password" id="pinRepeat" inputmode="numeric" autocomplete="new-password" placeholder="Repeat PIN" onkeydown="if(event.key==='Enter')savePin()">
+            </div>
+            <div class="seed-actions">
+                <button class="btn btn-secondary" onclick="skipPin()">Not now</button>
+                <button class="btn btn-primary" onclick="savePin()">Save on this device</button>
+            </div>
+            <p class="info-text" style="font-size: 12px; margin-top: 12px;">Forgot the PIN later? Import the wallet again from your seed phrase.</p>
         </div>
     </div>
 

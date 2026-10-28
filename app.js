@@ -360,6 +360,7 @@ async function confirmSeedPhrase() {
     pendingMnemonic = null;
     closeModal('seedModal');
     await connectWallet();
+    offerPin();
 }
 
 async function createNewWallet() {
@@ -449,8 +450,10 @@ async function importWallet() {
         }
         
         closeModal('importModal');
+        document.getElementById('importKey').value = '';
         showToast('Wallet imported successfully!');
         await connectWallet();
+        offerPin();
     } catch (error) {
         console.error('Import error:', error);
         showToast('Invalid private key or seed phrase');
@@ -510,6 +513,78 @@ async function updateBalance() {
     }
 }
 
+// ---- Saved wallet on this device (ethers keystore, encrypted with a PIN) ----
+const KEYSTORE_KEY = 'ethWalletKeystore';
+const NOSTR_ID_KEY = 'ethWalletNostrIdentity';
+
+function hasSavedWallet() {
+    try { return !!localStorage.getItem(KEYSTORE_KEY); } catch (e) { return false; }
+}
+
+function showLandingPanels() {
+    const saved = hasSavedWallet();
+    document.getElementById('unlockPanel').classList.toggle('hidden', !saved);
+    document.getElementById('createPanel').classList.toggle('hidden', saved);
+}
+
+function offerPin() {
+    if (!wallet || hasSavedWallet()) return;
+    document.getElementById('pinSet').value = '';
+    document.getElementById('pinRepeat').value = '';
+    document.getElementById('pinModal').classList.add('active');
+}
+
+function skipPin() {
+    closeModal('pinModal');
+}
+
+async function savePin() {
+    const pin = document.getElementById('pinSet').value;
+    const repeat = document.getElementById('pinRepeat').value;
+    if (pin.length < 6) { showToast('PIN must be at least 6 characters'); return; }
+    if (pin !== repeat) { showToast('PINs do not match'); return; }
+    if (!wallet) { showToast('No wallet to save'); return; }
+    try {
+        showToast('Encrypting...');
+        // scrypt N lowered so phones encrypt in a second or two; still far stronger than plain storage.
+        const json = await wallet.encrypt(pin, { scrypt: { N: 1 << 15 } });
+        localStorage.setItem(KEYSTORE_KEY, json);
+        if (nostrIdentity) localStorage.setItem(NOSTR_ID_KEY, JSON.stringify(nostrIdentity));
+        else localStorage.removeItem(NOSTR_ID_KEY);
+        closeModal('pinModal');
+        showToast('Wallet saved on this device');
+    } catch (err) {
+        showToast('Could not save: ' + err.message);
+    }
+}
+
+async function unlockWallet() {
+    const pin = document.getElementById('unlockPin').value;
+    if (!pin) { showToast('Enter your PIN'); return; }
+    const json = localStorage.getItem(KEYSTORE_KEY);
+    if (!json) { showLandingPanels(); return; }
+    try {
+        showToast('Unlocking...');
+        wallet = await ethers.Wallet.fromEncryptedJson(json, pin);
+        const n = localStorage.getItem(NOSTR_ID_KEY);
+        nostrIdentity = n ? JSON.parse(n) : null;
+        document.getElementById('unlockPin').value = '';
+        await connectWallet();
+    } catch (err) {
+        showToast('Wrong PIN');
+    }
+}
+
+function forgetWallet() {
+    if (!window.confirm('Remove the saved wallet from this device? You can always import it again with your seed phrase.')) return;
+    localStorage.removeItem(KEYSTORE_KEY);
+    localStorage.removeItem(NOSTR_ID_KEY);
+    wallet = null;
+    nostrIdentity = null;
+    showLandingPanels();
+    showToast('Wallet removed from this device');
+}
+
 function logout() {
     wallet = null;
     provider = null;
@@ -518,7 +593,8 @@ function logout() {
     document.getElementById('createScreen').classList.remove('hidden');
     showLayer('wallet');
     updateNostrIdentityCard();
-    showToast('Wallet disconnected');
+    showLandingPanels();
+    showToast(hasSavedWallet() ? 'Wallet locked' : 'Wallet disconnected');
 }
 
 function showLayer(layer) {
@@ -1061,6 +1137,7 @@ document.querySelectorAll('.modal').forEach(modal => {
 
 updateNetworkBadge();
 startMarketWatcher();
+showLandingPanels();
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
