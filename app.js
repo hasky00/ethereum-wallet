@@ -842,7 +842,7 @@ async function thorFetch(hosts, path) {
     }
     throw lastErr || new Error('No THORChain node reachable');
 }
-const THOR_AFFILIATE = '';
+const THOR_AFFILIATE = 'hasky';
 const THOR_AFFILIATE_BPS = 50;
 let btcQuote = null;
 let btcPollTimer = null;
