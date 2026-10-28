@@ -547,7 +547,7 @@ async function savePin() {
     try {
         showToast('Encrypting...');
         // scrypt N lowered so phones encrypt in a second or two; still far stronger than plain storage.
-        const json = await wallet.encrypt(pin, { scrypt: { N: 1 << 15 } });
+        const json = await wallet.encrypt(pin, { scrypt: { N: 1 << 13 } });
         localStorage.setItem(KEYSTORE_KEY, json);
         if (nostrIdentity) localStorage.setItem(NOSTR_ID_KEY, JSON.stringify(nostrIdentity));
         else localStorage.removeItem(NOSTR_ID_KEY);
